@@ -7,6 +7,7 @@ import cl.grupo4.uniday.repository.MateriaRepository;
 import cl.grupo4.uniday.repository.SemestreRepository;
 import cl.grupo4.uniday.repository.UsuarioRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
+@ConditionalOnProperty(name = "app.seed.enabled", havingValue = "true", matchIfMissing = false)
 public class DataSeeder implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepository;

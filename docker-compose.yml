@@ -1,21 +1,52 @@
+# docker-compose.yml - Despliegue en servidor (Uniday)
+#
+# Uso local para desarrollo: levantar MySQL con Workbench/XAMPP y ejecutar
+# sql/uniday.sql, luego arrancar la app con un IDE o `.\gradlew.bat bootRun`.
+#
+# Este archivo es SOLO para desplegar el proyecto completo en un servidor:
+#   docker compose up -d --build
+#
+# Al inicializar MySQL por primera vez se ejecuta automáticamente
+# sql/uniday.sql (crea BD, tablas, FKs, usuario y datos demo). Con la app lista
+# en http://servidor:8080, usando el mismo usuario/contraseña demo del script.
+
 services:
   mysql:
     image: mysql:8.0
-    container_name: uniteq-mysql
+    container_name: uniday-mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: uniteq
-      MYSQL_USER: uniteq
-      MYSQL_PASSWORD: uniteq
+      MYSQL_DATABASE: uniday
+      MYSQL_USER: uniday
+      MYSQL_PASSWORD: uniday
     ports:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+      # Ejecuta el esquema oficial en el primer arranque del volumen.
+      - ./sql/uniday.sql:/docker-entrypoint-initdb.d/01-uniday.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  app:
+    build: .
+    container_name: uniday-app
+    ports:
+      - "8080:8080"
+    environment:
+      # La app valida el esquema, nunca lo crea: las tablas vienen del initdb.
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/uniday?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: uniday
+      SPRING_DATASOURCE_PASSWORD: uniday
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      APP_SEED_ENABLED: "false"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   mysql-data:
