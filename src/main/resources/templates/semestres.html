@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Uniday - Semestres')}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: body}"></div>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="text-uniday-azul fw-bold mb-0">Mis semestres</h1>
+            <p class="text-muted mb-0" th:if="${semestreActivo != null}">
+                Semestre activo: <strong th:text="${semestreActivo.nombre}">Semestre</strong>
+            </p>
+            <p class="text-muted mb-0" th:unless="${semestreActivo != null}">
+                Aún no hay un semestre activo. Activa uno para empezar.
+            </p>
+        </div>
+        <a th:href="@{/semestres/nuevo}" class="btn btn-uniday">+ Nuevo semestre</a>
+    </div>
+
+    <div class="row" th:if="${!semestres.isEmpty()}">
+        <div class="col-md-6 mb-3" th:each="semestre : ${semestres}">
+            <div th:classappend="${semestre.activo} ? 'card-activa' : ''" class="card card-uniday h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="card-title fw-bold mb-0" th:text="${semestre.nombre}">Semestre</h5>
+                            <span class="badge mt-1" th:classappend="${semestre.activo} ? 'badge-activo' : 'badge-finalizado'"
+                                  th:text="${semestre.activo} ? 'Actual' : 'Finalizado'">Estado</span>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                    title="Opciones" style="color: var(--uniday-azul);">
+                                ⋯
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/semestres/{id}/editar(id=${semestre.id})}">Editar</a>
+                                </li>
+                                <li>
+                                    <form th:action="@{/semestres/{id}/eliminar(id=${semestre.id})}" method="post"
+                                          onsubmit="return confirm('¿Eliminar este semestre y todas sus materias?');">
+                                        <button type="submit" class="dropdown-item text-danger">Eliminar</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <p class="text-muted mb-1">
+                        Desde: <span th:text="${semestre.fechaInicio == null ? '—' : semestre.fechaInicio}">—</span>
+                    </p>
+                    <p class="text-muted mb-2">
+                        Hasta: <span th:text="${semestre.fechaFin == null ? '—' : semestre.fechaFin}">—</span>
+                    </p>
+
+                    <div class="d-flex gap-2 mb-3 flex-wrap">
+                        <span class="badge bg-light text-dark border"
+                              th:text="${materiasPorSemestre.get(semestre.id) != null ? materiasPorSemestre.get(semestre.id).size() : 0} + ' Materias'">0 Materias</span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle"
+                              th:text="${creditosPorSemestre.get(semestre.id) != null ? creditosPorSemestre.get(semestre.id) : 0} + ' Créditos Totales'">0 Créditos</span>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <form th:action="@{/semestres/{id}/activar(id=${semestre.id})}" method="post"
+                              th:if="${!semestre.activo}">
+                            <button type="submit" class="btn btn-uniday-celeste btn-sm">Activar</button>
+                        </form>
+                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                data-bs-toggle="modal"
+                                th:attr="data-bs-target='#modal-' + ${semestre.id}">
+                            Ver detalles (Historial)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${semestres.isEmpty()}">
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">Aún no tienes semestres. ¡Crea el primero!</p>
+            <a th:href="@{/semestres/nuevo}" class="btn btn-uniday">Crear semestre</a>
+        </div>
+    </div>
+</div>
+
+<!-- Modales de detalles de cada semestre (viven en el nivel raíz para un correcto posicionamiento) -->
+<th:block th:each="semestre : ${semestres}">
+    <div class="modal fade" th:id="'modal-' + ${semestre.id}" tabindex="-1"
+         th:attr="aria-labelledby='modal-title-' + ${semestre.id}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-bold" th:id="'modal-title-' + ${semestre.id}"
+                            th:text="${semestre.nombre}">Semestre</h5>
+                        <span class="badge mt-1" th:classappend="${semestre.activo} ? 'badge-activo' : 'badge-finalizado'"
+                              th:text="${semestre.activo} ? 'Semestre Activo' : 'Historial Académico (Finalizado)'">Estado</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-6">
+                            <span class="text-muted d-block small">Periodo:</span>
+                            <strong>
+                                <span th:text="${semestre.fechaInicio == null ? '—' : semestre.fechaInicio}">—</span>
+                                al
+                                <span th:text="${semestre.fechaFin == null ? '—' : semestre.fechaFin}">—</span>
+                            </strong>
+                        </div>
+                        <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                            <span class="text-muted d-block small">Carga Académica:</span>
+                            <strong th:text="${creditosPorSemestre.get(semestre.id) != null ? creditosPorSemestre.get(semestre.id) : 0} + ' créditos inscritos'">0 créditos</strong>
+                        </div>
+                    </div>
+
+                    <h6 class="text-uniday-azul fw-semibold mb-3">Materias Cursadas</h6>
+                    <div th:if="${materiasPorSemestre.get(semestre.id) != null and !materiasPorSemestre.get(semestre.id).isEmpty()}">
+                        <ul class="list-group">
+                            <li class="list-group-item p-3"
+                                th:each="materia : ${materiasPorSemestre.get(semestre.id)}">
+                                <div class="d-flex align-items-start">
+                                    <span class="me-3 rounded-circle flex-shrink-0 mt-1" style="width: 16px; height: 16px; display: inline-block;"
+                                          th:style="'background-color: ' + (${materia.colorHex} != null ? ${materia.colorHex} : '#B541FA') + ';'"></span>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <strong class="fs-6" th:text="${materia.nombre}">Materia</strong>
+                                                <span class="badge bg-light text-dark border" th:if="${materia.codigo != null and !materia.codigo.isBlank()}"
+                                                      th:text="${materia.codigo}">COD-101</span>
+                                            </div>
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle" th:if="${materia.creditos > 0}"
+                                                  th:text="${materia.creditos} + ' Créditos'">5 Créditos</span>
+                                        </div>
+                                        <p class="text-muted mb-1 small" th:if="${materia.descripcion != null and !materia.descripcion.isBlank()}"
+                                           th:text="${materia.descripcion}">Descripción...</p>
+                                        <div class="d-flex justify-content-between align-items-center text-muted small flex-wrap gap-2">
+                                            <span th:text="${materia.profesor != null and !materia.profesor.isBlank()} ? ('Profesor: ' + ${materia.profesor}) : 'Sin profesor asignado'">Profesor</span>
+                                            <span th:text="'Exigencia Asistencia: ' + ${materia.asistenciaExigida} + '%'">75%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div th:if="${materiasPorSemestre.get(semestre.id) == null or materiasPorSemestre.get(semestre.id).isEmpty()}">
+                        <p class="text-muted mb-0">Este semestre no tiene materias registradas.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a th:href="@{/materias(semestre=${semestre.id})}" class="btn btn-uniday">Ver y gestionar materias</a>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+</body>
+</html>

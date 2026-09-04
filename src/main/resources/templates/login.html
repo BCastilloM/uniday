@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Uniday - Iniciar sesión')}"></head>
+<body>
+
+<div class="bg-uniday-azul" style="min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+    <div class="container" style="max-width: 460px;">
+        <div class="card card-uniday p-4">
+            <div class="text-center mb-4">
+                <img th:src="@{/img/Uniday.png}" alt="Uniday" width="80" height="80" class="mb-3">
+                <h1 class="text-uniday-azul fw-bold mb-1">Uniday</h1>
+                <p class="text-muted mb-0">Inicia sesión en tu cuenta</p>
+            </div>
+
+            <div th:if="${error}" class="alert alert-danger">
+                <span th:text="${error}">Error</span>
+            </div>
+            <div th:if="${success}" class="alert alert-success">
+                <span th:text="${success}">Éxito</span>
+            </div>
+
+            <form th:action="@{/login}" method="post">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-uniday w-100">Entrar</button>
+            </form>
+
+            <p class="text-center mt-3 mb-0">
+                ¿No tienes cuenta? <a th:href="@{/registro}" class="text-uniday-morado fw-semibold">Regístrate</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

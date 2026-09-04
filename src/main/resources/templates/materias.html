@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Uniday - Materias')}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: body}"></div>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="d-flex align-items-center">
+                <h1 class="text-uniday-azul fw-bold mb-0" th:text="${semestre.nombre}">Semestre</h1>
+                <span class="badge badge-activo ms-2">Activo</span>
+            </div>
+            <p class="text-muted mb-0" th:if="${semestre.fechaInicio != null}">
+                Desde <span th:text="${semestre.fechaInicio}"></span>
+                <span th:if="${semestre.fechaFin != null}"> hasta <span th:text="${semestre.fechaFin}"></span></span>
+            </p>
+            <p class="text-muted mb-0">Materias del semestre</p>
+        </div>
+        <a th:href="@{/materias/nueva(semestreId=${semestre.id})}" class="btn btn-uniday">+ Nueva materia</a>
+    </div>
+
+    <div class="row" th:if="${!materias.isEmpty()}">
+        <div class="col-md-6 mb-3" th:each="materia : ${materias}">
+            <div class="card card-uniday h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor"
+                                 class="me-1 flex-shrink-0"
+                                 th:style="'color: ' + (${materia.colorHex} != null ? ${materia.colorHex} : '#B541FA') + ';'"
+                                 viewBox="0 0 16 16">
+                                <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.81 8.985.936 8 1.783z"/>
+                            </svg>
+                            <h5 class="card-title fw-bold mb-0" th:text="${materia.nombre}">Materia</h5>
+                            <span class="badge bg-light text-dark border" th:if="${materia.codigo != null and !materia.codigo.isBlank()}"
+                                  th:text="${materia.codigo}">COD-101</span>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle" th:if="${materia.creditos > 0}"
+                                  th:text="${materia.creditos} + ' Créditos'">5 Créditos</span>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                    title="Opciones" style="color: var(--uniday-azul);">
+                                ⋯
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/materias/{id}/editar(id=${materia.id})}">Editar</a>
+                                </li>
+                                <li>
+                                    <form th:action="@{/materias/{id}/eliminar(id=${materia.id})}" method="post"
+                                          onsubmit="return confirm('¿Eliminar esta materia?');">
+                                        <button type="submit" class="dropdown-item text-danger">Eliminar</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-2 small" th:if="${materia.descripcion != null and !materia.descripcion.isBlank()}"
+                       th:text="${materia.descripcion}">Descripción de la materia...</p>
+                    <p class="text-muted mb-1" th:if="${materia.profesor != null and !materia.profesor.isBlank()}">
+                        Profesor: <span th:text="${materia.profesor}">Profesor</span>
+                    </p>
+                    <p class="text-muted mb-0">
+                        Asistencia exigida: <span th:text="${materia.asistenciaExigida} + '%'">75%</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${materias.isEmpty()}">
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">Este semestre no tiene materias todavía.</p>
+            <a th:href="@{/materias/nueva(semestreId=${semestre.id})}" class="btn btn-uniday">Agregar materia</a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
