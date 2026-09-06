@@ -7,6 +7,10 @@
 #   .\dev.ps1 restart   -> Para todo y levanta limpio (MySQL + app)
 #   .\dev.ps1 up        -> Solo levanta MySQL + app (sin parar antes)
 #
+# Esquema automático: si sql/uniday.sql cambió (nueva tabla, columna, dato
+# demo), dev.ps1 detecta el hash distinto y recrea el volumen de MySQL solo,
+# para que la BD siempre coincida con el esquema (ddl-auto=validate).
+#
 # Consejo: ejecutar con PowerShell. Si da error de ejecución de scripts, correr:
 #   Set-ExecutionPolicy -Scope Process Bypass
 # y volver a ejecutar.
@@ -55,10 +59,76 @@ function Stop-Gradle {
     Write-Host "  Daemons detenidos." -ForegroundColor Green
 }
 
+# Hash del esquema aplicado en la BD (evita recrear el volumen si no cambió nada).
+$MarkerFile = "$ScriptDir\.uniday-db-hash"
+
+function Get-UnidaySqlHash {
+    $hash = Get-FileHash -Algorithm SHA256 -LiteralPath "$ScriptDir\sql\uniday.sql"
+    return $hash.Hash
+}
+
+# Recrea el volumen de MySQL solo cuando sql/uniday.sql cambió. Docker ejecuta
+# el initdb únicamente sobre un volumen VACÍO, así que si agregamos tablas al
+# SQL (nueva funcionalidad) y no borramos el volumen, la app cae al arrancar
+# con ddl-auto=validate. Este check evita ese error de forma automática.
+function Sync-MysqlSchema {
+    $sqlHash = Get-UnidaySqlHash
+
+    $marker = ''
+    if (Test-Path -LiteralPath $MarkerFile) {
+        $marker = (Get-Content -LiteralPath $MarkerFile -Raw).Trim()
+    }
+
+    docker volume inspect uniday_mysql-data 2>$null | Out-Null
+    $volumeExists = ($LASTEXITCODE -eq 0)
+
+    if ($volumeExists -and $marker -eq $sqlHash) {
+        Write-Host "  Esquema vigente (sql/uniday.sql sin cambios)." -ForegroundColor Green
+        return
+    }
+
+    if ($volumeExists) {
+        Write-Host "  Cambios detectados en sql/uniday.sql -> recreando la BD..." -ForegroundColor Yellow
+        docker compose down 2>&1 | ForEach-Object { Write-Host "  $_" }
+        docker volume rm uniday_mysql-data 2>&1 | ForEach-Object { Write-Host "  $_" }
+    } else {
+        Write-Host "  Primera vez o volumen inexistente -> BD se crea desde cero." -ForegroundColor Yellow
+    }
+}
+
 function Start-Mysql {
     Write-Host "[3/3] Levantando MySQL (Docker)..." -ForegroundColor Cyan
-    docker compose up -d 2>&1 | ForEach-Object { Write-Host "  $_" }
+    # Solo el contenedor de BD: el servicio 'app' del compose ocupa el 8080 y
+    # chocaría con el bootRun local que arranca Start-App.
+    Sync-MysqlSchema
+    docker compose up -d mysql 2>&1 | ForEach-Object { Write-Host "  $_" }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  ERROR: docker compose up falló. Revisa que Docker esté corriendo." -ForegroundColor Red
+        exit 1
+    }
+    if (-not (Wait-MysqlReady)) {
+        Write-Host "  ERROR: MySQL no quedó listo. Revisa los logs con: docker logs uniday-mysql" -ForegroundColor Red
+        exit 1
+    }
+    # Guarda el hash del esquema aplicado para detectar cambios en el futuro.
+    Get-UnidaySqlHash | Set-Content -LiteralPath $MarkerFile
     Write-Host "  MySQL listo." -ForegroundColor Green
+}
+
+# Espera el healthcheck de MySQL (docker-compose.yml). Cuando el volumen se
+# recrea, mysqld parte de cero y tarda ~20-40s; si bootRun arranca antes,
+# HikariCP falla al conectar y la app muere. Este wait evita ese error.
+function Wait-MysqlReady {
+    Write-Host "  Esperando que MySQL este listo..." -ForegroundColor Yellow
+    for ($i = 1; $i -le 30; $i++) {
+        $status = docker inspect --format '{{.State.Health.Status}}' uniday-mysql 2>$null
+        if ($status -eq 'healthy') {
+            Write-Host "  MySQL saludable." -ForegroundColor Green
+            return $true
+        }
+        Start-Sleep -Seconds 2
+    }
+    return $false
 }
 
 function Start-App {

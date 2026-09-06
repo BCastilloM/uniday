@@ -22,22 +22,6 @@ import java.util.List;
 @RequestMapping("/materias")
 public class MateriaController {
 
-    // Colores predefinidos para las materias (12 opciones).
-    public static final List<String> COLORES_MATERIA = List.of(
-            "#B541FA", // Morado (marca)
-            "#4FD2E9", // Celeste (marca)
-            "#192584", // Azul (marca)
-            "#E74C3C", // Rojo
-            "#F39C12", // Naranja
-            "#F1C40F", // Amarillo
-            "#2ECC71", // Verde
-            "#1ABC9C", // Verde agua
-            "#3498DB", // Azul claro
-            "#9B59B6", // Púrpura
-            "#E67E22", // Naranja oscuro
-            "#34495E"  // Gris azulado
-    );
-
     private final MateriaRepository materiaRepository;
     private final SemestreRepository semestreRepository;
 
@@ -50,7 +34,6 @@ public class MateriaController {
         return (Long) session.getAttribute(LoginInterceptor.SESSION_USUARIO_ID);
     }
 
-    // Devuelve el semestre si existe y pertenece al usuario, sino null
     private Semestre semestreDelUsuario(Long semestreId, Long usuarioId) {
         if (semestreId == null) {
             return null;
@@ -67,7 +50,6 @@ public class MateriaController {
                          HttpSession session, Model model, RedirectAttributes redirectAttributes) {
         Long usuarioId = usuarioLogueado(session);
 
-        // Si no se pasa semestre, usamos el activo del usuario
         Semestre semestreObj;
         if (semestre != null) {
             semestreObj = semestreDelUsuario(semestre, usuarioId);
@@ -99,8 +81,6 @@ public class MateriaController {
         model.addAttribute("materia", new Materia());
         model.addAttribute("semestre", semestreObj);
         model.addAttribute("titulo", "Nueva materia");
-        model.addAttribute("colorActual", COLORES_MATERIA.get(0));
-        model.addAttribute("colores", COLORES_MATERIA);
         model.addAttribute("action", "/materias");
         return "materia-form";
     }
@@ -132,7 +112,6 @@ public class MateriaController {
                           @RequestParam(required = false) Integer creditos,
                           @RequestParam(required = false) String descripcion,
                           @RequestParam(required = false) String profesor,
-                          @RequestParam(required = false) String colorHex,
                           @RequestParam(required = false) Integer asistenciaExigida,
                           HttpSession session,
                           RedirectAttributes redirectAttributes) {
@@ -157,7 +136,6 @@ public class MateriaController {
         materia.setCreditos(creditos != null ? Math.max(0, creditos) : 0);
         materia.setDescripcion(descripcion != null && !descripcion.isBlank() ? descripcion.trim() : null);
         materia.setProfesor(profesor != null && !profesor.isBlank() ? profesor.trim() : null);
-        materia.setColorHex(colorHex);
         materia.setAsistenciaExigida(asistenciaExigida != null ? asistenciaExigida : 75);
         materiaRepository.save(materia);
 
@@ -184,10 +162,6 @@ public class MateriaController {
         model.addAttribute("materia", materia);
         model.addAttribute("semestre", semestreObj);
         model.addAttribute("titulo", "Editar materia");
-        model.addAttribute("colorActual",
-                materia.getColorHex() != null && !materia.getColorHex().isBlank()
-                        ? materia.getColorHex() : COLORES_MATERIA.get(0));
-        model.addAttribute("colores", COLORES_MATERIA);
         model.addAttribute("action", "/materias/" + id + "/actualizar");
         return "materia-form";
     }
@@ -199,7 +173,6 @@ public class MateriaController {
                              @RequestParam(required = false) Integer creditos,
                              @RequestParam(required = false) String descripcion,
                              @RequestParam(required = false) String profesor,
-                             @RequestParam(required = false) String colorHex,
                              @RequestParam(required = false) Integer asistenciaExigida,
                              HttpSession session,
                              RedirectAttributes redirectAttributes) {
@@ -228,7 +201,6 @@ public class MateriaController {
         materia.setCreditos(creditos != null ? Math.max(0, creditos) : 0);
         materia.setDescripcion(descripcion != null && !descripcion.isBlank() ? descripcion.trim() : null);
         materia.setProfesor(profesor != null && !profesor.isBlank() ? profesor.trim() : null);
-        materia.setColorHex(colorHex);
         materia.setAsistenciaExigida(asistenciaExigida != null ? asistenciaExigida : 75);
         materiaRepository.save(materia);
 

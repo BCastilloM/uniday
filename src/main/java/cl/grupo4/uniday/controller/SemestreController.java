@@ -43,7 +43,6 @@ public class SemestreController {
         List<Semestre> semestres = semestreRepository.findByUsuarioId(usuarioId);
         model.addAttribute("semestres", semestres);
 
-        // Agrupa las materias por semestre y calcula total de créditos para el historial académico
         Map<Long, List<Materia>> materiasPorSemestre = new HashMap<>();
         Map<Long, Integer> creditosPorSemestre = new HashMap<>();
         for (Semestre semestre : semestres) {
@@ -199,7 +198,6 @@ public class SemestreController {
         }
 
         // Desactiva todos los semestres del usuario y activa el seleccionado.
-        // Todo dentro de la misma transacción para que nunca queden 2+ activos.
         semestreRepository.desactivarTodos(usuarioId);
         semestre.setActivo(true);
         semestreRepository.save(semestre);

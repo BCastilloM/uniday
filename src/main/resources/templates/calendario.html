@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Uniday - Calendario')}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: body}"></div>
+
+<style>
+    .cal-grilla {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 6px;
+    }
+
+    .cal-cabecera {
+        text-align: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--uniday-azul);
+        padding: 6px 0 2px;
+        letter-spacing: .04em;
+    }
+
+    .cal-dia {
+        min-height: 62px;
+        border: 1px solid #eaedf5;
+        border-radius: 10px;
+        padding: 5px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .cal-dia:hover {
+        border-color: var(--uniday-morado);
+    }
+
+    .cal-dia-vacia {
+        border-color: transparent;
+        background: transparent;
+        min-height: 0;
+    }
+
+    .cal-dia-hoy {
+        outline: 2px solid var(--uniday-celeste);
+        outline-offset: -1px;
+    }
+
+    .cal-dia-sel {
+        background: #f5f1ff;
+        border-color: var(--uniday-morado);
+    }
+
+    .cal-num {
+        font-size: 12px;
+        font-weight: 600;
+        color: #9aa1b1;
+        line-height: 1;
+    }
+
+    .cal-num-hoy {
+        color: var(--uniday-azul);
+        font-weight: 800;
+    }
+
+    .cal-dots {
+        display: flex;
+        gap: 3px;
+        align-items: center;
+        margin-top: auto;
+    }
+
+    .cal-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--uniday-azul);
+    }
+
+    .cal-dot-mas {
+        font-size: 10px;
+        font-weight: 600;
+        color: #9aa1b1;
+        line-height: 1;
+    }
+</style>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="d-flex align-items-center">
+                <h1 class="text-uniday-azul fw-bold mb-0">Calendario</h1>
+                <span class="badge badge-activo ms-2" th:text="${semestre.nombre}">Semestre activo</span>
+            </div>
+            <p class="text-muted mb-0">Tareas, certámenes, tests y presentaciones del semestre</p>
+        </div>
+        <a th:href="${hrefNuevo}" class="btn btn-uniday">+ Nueva actividad</a>
+    </div>
+
+    <div class="card card-uniday p-3 mb-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <a th:href="${hrefAnterior}" class="btn btn-outline-secondary btn-sm" title="Mes anterior">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            <h2 class="fs-5 fw-bold text-uniday-azul mb-0" th:text="${mesNombre}">Septiembre 2026</h2>
+            <a th:href="${hrefSiguiente}" class="btn btn-outline-secondary btn-sm" title="Mes siguiente">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+
+        <div class="cal-grilla">
+            <div class="cal-cabecera">LUN</div>
+            <div class="cal-cabecera">MAR</div>
+            <div class="cal-cabecera">MIÉ</div>
+            <div class="cal-cabecera">JUE</div>
+            <div class="cal-cabecera">VIE</div>
+            <div class="cal-cabecera">SÁB</div>
+            <div class="cal-cabecera">DOM</div>
+
+            <th:block th:each="d : ${dias}">
+                <div th:if="${d == null}" class="cal-dia cal-dia-vacia"></div>
+                <a th:unless="${d == null}" th:href="${d.href}" class="cal-dia"
+                   th:classappend="${(d.esHoy ? 'cal-dia-hoy' : '') + (d.selected ? ' cal-dia-sel' : '')}">
+                    <span class="cal-num" th:classappend="${d.esHoy ? 'cal-num-hoy' : ''}" th:text="${d.numero}">1</span>
+                    <div class="cal-dots" th:if="${d.cantidad > 0}">
+                        <span class="cal-dot" th:each="i : ${#numbers.sequence(1, d.dots)}"></span>
+                        <span class="cal-dot-mas" th:if="${d.masDeTres}" th:text="'+' + (${d.cantidad} - 3)">+2</span>
+                    </div>
+                </a>
+            </th:block>
+        </div>
+    </div>
+
+    <th:block th:if="${mostrarLista}">
+        <th:block th:each="grupo : ${actividadesPorTipo}">
+            <th:block th:if="${!grupo.value.isEmpty()}">
+                <h3 class="fs-6 fw-bold text-uniday-azul mt-3 mb-2" th:text="${grupo.key}">Tareas</h3>
+                <div class="card card-uniday mb-3" th:each="a : ${grupo.value}">
+                    <div class="card-body d-flex align-items-center gap-3 py-3">
+                        <form th:action="@{/calendario/{id}/estado(id=${a.id})}" method="post">
+                            <input type="hidden" name="anio" th:value="${anio}">
+                            <input type="hidden" name="mes" th:value="${mes}">
+                            <input type="hidden" name="dia" th:value="${diaSeleccionado}">
+                            <select name="estado" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                                <option value="pendiente" th:selected="${a.estado == 'pendiente'}">Pendiente</option>
+                                <option value="progreso" th:selected="${a.estado == 'progreso'}">En progreso</option>
+                                <option value="completada" th:selected="${a.estado == 'completada'}">Completada</option>
+                            </select>
+                        </form>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold" th:classappend="${a.estado == 'completada' ? 'text-decoration-line-through text-body-tertiary' : ''}"
+                                 th:text="${a.titulo}">Título</div>
+                            <small class="text-muted" th:text="${a.materiaNombre}">Materia</small>
+                        </div>
+                        <span class="badge rounded-pill bg-light text-dark border d-none d-md-inline"
+                              th:text="${a.tipoCapitalizado}">Tarea</span>
+                        <span class="small fw-semibold" th:text="${a.fechaRelativa}"
+                              th:classappend="${(a.vencida or (a.esHoy and a.estado != 'completada')) ? 'text-danger' : 'text-muted'}">Hoy</span>
+                        <div class="dropdown">
+                            <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                    title="Opciones" style="color: var(--uniday-azul);">
+                                <i class="bi bi-three-dots-vertical fs-5"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" th:href="@{/calendario/{id}/editar(id=${a.id})}">
+                                        <i class="bi bi-pencil me-2 text-muted"></i>Editar</a>
+                                </li>
+                                <li>
+                                    <form th:action="@{/calendario/{id}/eliminar(id=${a.id})}" method="post"
+                                          onsubmit="return confirm('¿Eliminar esta actividad?');">
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="bi bi-trash me-2 text-muted"></i>Eliminar
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </th:block>
+        </th:block>
+        <div class="text-center py-5" th:if="${!hayActividades}">
+            <p class="text-muted fs-5">No hay actividades para este día.</p>
+            <a th:href="${hrefNuevo}" class="btn btn-uniday">Agregar actividad</a>
+        </div>
+    </th:block>
+
+    <div th:if="${!mostrarLista}">
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">Selecciona un día para ver sus actividades.</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

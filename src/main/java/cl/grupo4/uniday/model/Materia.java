@@ -27,9 +27,6 @@ public class Materia {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    @Column(name = "color_hex")
-    private String colorHex;
-
     @Column(name = "asistencia_exigida", nullable = false)
     private int asistenciaExigida = 75;
 
@@ -90,14 +87,6 @@ public class Materia {
 
     public void setProfesor(String profesor) {
         this.profesor = profesor;
-    }
-
-    public String getColorHex() {
-        return colorHex;
-    }
-
-    public void setColorHex(String colorHex) {
-        this.colorHex = colorHex;
     }
 
     public int getAsistenciaExigida() {

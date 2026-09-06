@@ -15,7 +15,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        String[] protectedPatterns = {"/semestres", "/semestres/**", "/materias", "/materias/**"};
+        String[] protectedPatterns = {"/semestres", "/semestres/**", "/materias", "/materias/**",
+                "/horarios", "/horarios/**", "/calendario", "/calendario/**"};
 
         registry.addInterceptor(loginInterceptor)
                 .addPathPatterns(protectedPatterns);

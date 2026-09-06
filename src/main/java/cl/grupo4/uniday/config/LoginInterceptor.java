@@ -10,6 +10,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class LoginInterceptor implements HandlerInterceptor {
 
     public static final String SESSION_USUARIO_ID = "usuarioId";
+    public static final String SESSION_NOMBRE = "nombreUsuario";
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)

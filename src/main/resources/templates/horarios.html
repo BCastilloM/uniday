@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Uniday - Horario')}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: body}"></div>
+
+<style>
+    .horario-scroll {
+        overflow-x: auto;
+    }
+
+    .grilla-horario {
+        display: flex;
+        gap: 14px;
+        min-width: 560px;
+        padding: 2px 4px 8px;
+    }
+
+    .col-horas,
+    .col-dia {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .col-horas {
+        flex: 0 0 52px;
+    }
+
+    .col-dia {
+        flex: 1 1 0;
+        min-width: 100px;
+        border-left: 1px solid #eceff5;
+    }
+
+    .cabecera-horas {
+        height: 44px;
+        flex: 0 0 44px;
+    }
+
+    .cabecera-dia {
+        height: 44px;
+        flex: 0 0 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 12.5px;
+        color: var(--uniday-azul);
+    }
+
+    .cuerpo-horas,
+    .cuerpo-dia {
+        position: relative;
+    }
+
+    .cuerpo-dia {
+        background: #f7f8fc;
+        border-radius: 12px;
+    }
+
+    .marco-hora {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 72px;
+        border-top: 1px solid #eceff5;
+    }
+
+    .hora-label {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 72px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+        padding-top: 3px;
+        padding-right: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #9aa1b1;
+        border-top: 1px solid #eceff5;
+    }
+
+    .bloque {
+        position: absolute;
+        border-radius: 10px;
+        background: var(--uniday-azul);
+        color: #fff;
+        box-shadow: 0 3px 8px rgba(25, 37, 132, .15);
+        padding: 8px 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .bloque-materia {
+        font-size: 12.5px;
+        font-weight: 700;
+        line-height: 1.2;
+        padding-right: 18px;
+    }
+
+    .bloque-hora {
+        font-size: 11px;
+        opacity: .85;
+        margin-top: 3px;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .bloque .dropdown {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+    }
+
+    .bloque .btn-puntos {
+        color: #fff;
+        font-size: 15px;
+        line-height: 1;
+        padding: 4px 6px;
+    }
+</style>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="d-flex align-items-center">
+                <h1 class="text-uniday-azul fw-bold mb-0" th:text="${semestre.nombre}">Semestre</h1>
+                <span class="badge badge-activo ms-2">Activo</span>
+            </div>
+            <p class="text-muted mb-0">Horario semanal del semestre</p>
+        </div>
+        <a th:href="@{/horarios/nuevo}" class="btn btn-uniday">+ Nuevo horario</a>
+    </div>
+
+    <div class="card card-uniday p-3" th:if="${!horas.isEmpty()}">
+        <div class="horario-scroll">
+            <div class="grilla-horario">
+
+                <div class="col-horas">
+                    <div class="cabecera-horas"></div>
+                    <div class="cuerpo-horas" th:style="'height:' + ${totalPx} + 'px'">
+                        <div class="hora-label" th:each="h, st : ${horas}"
+                             th:text="${h}"
+                             th:style="'top:' + ${st.index * rowAltura} + 'px'">08:00</div>
+                    </div>
+                </div>
+
+                <!-- Solo los días de la semana que tienen clases -->
+                <div class="col-dia" th:each="e : ${bloquesPorDia}">
+                    <div class="cabecera-dia" th:text="${diasNombres[e.key - 1]}">Lun</div>
+                    <div class="cuerpo-dia" th:style="'height:' + ${totalPx} + 'px'">
+
+                        <div class="marco-hora" th:each="h, hs : ${horas}"
+                             th:style="'top:' + ${hs.index * rowAltura} + 'px'"></div>
+
+                        <div class="bloque"
+                             th:each="b : ${e.value}"
+                             th:style="'top:' + ${topPx[b.id]} + 'px; height:' + ${heightPx[b.id]} + 'px; left: calc(' + ${leftPct[b.id]} + '% + 4px); width: calc(' + ${widthPct[b.id]} + '% - 8px)'">
+                            <span class="bloque-materia" th:text="${materiaNombres[b.materiaId]}">Programación</span>
+                            <span class="bloque-hora">
+                                <span th:text="${b.horaInicio} + ' - ' + ${b.horaFin}">08:30 - 10:00</span>
+                                <span class="text-white-50" th:if="${b.sala != null and !b.sala.isBlank()}"
+                                      th:text="${b.sala}">Sala 12</span>
+                            </span>
+                            <div class="dropdown">
+                                <button class="btn btn-puntos border-0 bg-transparent" type="button"
+                                        data-bs-toggle="dropdown" aria-expanded="false" title="Opciones">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" th:href="@{/horarios/{id}/editar(id=${b.id})}">
+                                            <i class="bi bi-pencil me-2 text-muted"></i>Editar</a>
+                                    </li>
+                                    <li>
+                                        <form th:action="@{/horarios/{id}/eliminar(id=${b.id})}" method="post"
+                                              onsubmit="return confirm('¿Eliminar este horario?');">
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="bi bi-trash me-2 text-muted"></i>Eliminar
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${horas.isEmpty()}">
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">Este semestre no tiene horarios todavía.</p>
+            <a th:href="@{/horarios/nuevo}" class="btn btn-uniday">Agregar horario</a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

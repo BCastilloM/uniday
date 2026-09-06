@@ -12,13 +12,6 @@
                 <p class="text-muted mb-0">Inicia sesión en tu cuenta</p>
             </div>
 
-            <div th:if="${error}" class="alert alert-danger">
-                <span th:text="${error}">Error</span>
-            </div>
-            <div th:if="${success}" class="alert alert-success">
-                <span th:text="${success}">Éxito</span>
-            </div>
-
             <form th:action="@{/login}" method="post">
                 <div class="mb-3">
                     <label for="email" class="form-label">Email</label>
@@ -38,5 +31,8 @@
     </div>
 </div>
 
+<!-- Avisos (toasts): mismo fragmento que el resto de la app -->
+<div th:replace="~{fragments/layout :: toasts}"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -104,6 +104,7 @@ public class AuthController {
         }
 
         session.setAttribute(LoginInterceptor.SESSION_USUARIO_ID, usuario.getId());
+        session.setAttribute(LoginInterceptor.SESSION_NOMBRE, usuario.getNombre());
         return "redirect:/semestres";
     }
 

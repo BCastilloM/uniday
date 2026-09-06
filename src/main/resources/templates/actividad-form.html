@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Uniday - Actividad')}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: body}"></div>
+
+<div class="container" style="max-width: 560px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a th:href="@{/calendario}" class="text-uniday-morado text-decoration-none">&larr; Volver al calendario</a>
+            <h1 class="text-uniday-azul fw-bold mb-0" th:text="${titulo}">Actividad</h1>
+        </div>
+    </div>
+
+    <div class="card card-uniday p-4">
+        <form th:action="${action}" method="post">
+            <div class="mb-3">
+                <label for="titulo" class="form-label">Título</label>
+                <input type="text" class="form-control" id="titulo" name="titulo"
+                       th:value="${actividad.titulo}" placeholder="Ej: Certamen 1" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label d-block">Tipo</label>
+                <div class="form-check form-check-inline" th:each="entry : ${tipos}">
+                    <input class="form-check-input" type="radio" name="tipo"
+                           th:id="'tipo-' + ${entry.key}" th:value="${entry.key}"
+                           th:checked="${actividad.tipo == entry.key}">
+                    <label class="form-check-label" th:for="'tipo-' + ${entry.key}" th:text="${entry.value}">Tarea</label>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label for="estado" class="form-label">Estado</label>
+                <select class="form-select" id="estado" name="estado">
+                    <option value="pendiente" th:selected="${actividad.estado == 'pendiente'}">Pendiente</option>
+                    <option value="progreso" th:selected="${actividad.estado == 'progreso'}">En progreso</option>
+                    <option value="completada" th:selected="${actividad.estado == 'completada'}">Completada</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="materiaId" class="form-label">Materia</label>
+                <select class="form-select" id="materiaId" name="materiaId" required>
+                    <option value="" disabled>Selecciona una materia</option>
+                    <option th:each="materia : ${materias}" th:value="${materia.id}" th:text="${materia.nombre}"
+                            th:selected="${actividad.materiaId == materia.id}">Materia</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="fecha" class="form-label">Fecha</label>
+                <input type="date" class="form-control" id="fecha" name="fecha"
+                       th:value="${actividad.fecha}" th:min="${fechaMin}" required>
+                <div class="form-text">La fecha no puede ser anterior a hoy.</div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-uniday">Guardar</button>
+                <a th:href="@{/calendario}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

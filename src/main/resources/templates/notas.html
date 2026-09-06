@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Uniday - Notas')}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: body}"></div>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="d-flex align-items-center">
+                <h1 class="text-uniday-azul fw-bold mb-0" th:text="${semestre.nombre}">Semestre</h1>
+                <span class="badge badge-activo ms-2">Activo</span>
+            </div>
+            <p class="text-muted mb-0">Notas y promedios del semestre</p>
+        </div>
+    </div>
+
+    <div class="row" th:if="${!materias.isEmpty()}">
+        <div class="col-md-6 mb-3" th:each="m : ${materias}">
+            <div class="card card-uniday h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="card-title fw-bold mb-1" th:text="${m.nombre}">Materia</h5>
+                            <span class="badge bg-light text-dark border"
+                                  th:if="${m.codigo != null and !m.codigo.isBlank()}"
+                                  th:text="${m.codigo}">COD-101</span>
+                            <span class="badge bg-light text-dark border ms-1"
+                                  th:text="${m.cantidadNotas} + ' notas'">3 notas</span>
+                        </div>
+                        <span class="badge fs-6"
+                              th:classappend="${m.promedio != null ? (m.promedio >= 4.0 ? 'bg-success' : 'bg-danger') : 'bg-secondary'}"
+                              th:text="${m.promedio != null ? #numbers.formatDecimal(m.promedio, 1, 2) : '—'}">5.50</span>
+                    </div>
+                    <p class="text-muted mb-3 small">
+                        % ponderado: <strong th:text="${#numbers.formatDecimal(m.porcentajePonderado, 1, 1)} + '%'">70%</strong>
+                        <span class="text-muted" th:if="${m.faltaPonderacion}"
+                              th:text="'(falta ' + ${#numbers.formatDecimal(100 - m.sumaPonderaciones, 1, 1)} + '%)'">(falta 30%)</span>
+                    </p>
+                    <a th:href="@{/notas/materia/{id}(id=${m.id})}" class="btn btn-uniday-celeste btn-sm">Ver notas</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${materias.isEmpty()}">
+        <div class="text-center py-5">
+            <p class="text-muted fs-5">Este semestre no tiene materias todavía.</p>
+            <a th:href="@{/materias}" class="btn btn-uniday">Agregar materia</a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

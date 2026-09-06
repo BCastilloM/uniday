@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Uniday - Notas')}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: body}"></div>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+<div>
+            <a th:href="@{/notas}" class="text-uniday-morado text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Volver a notas
+                </a>
+                <div class="d-flex align-items-center mt-2">
+                    <h1 class="text-uniday-azul fw-bold mb-0" th:text="${materia.nombre}">Materia</h1>
+                    <span class="display-6 fw-bold ms-3"
+                          th:classappend="${promedio != null ? (promedio >= 4.0 ? 'text-success' : 'text-danger') : 'text-muted'}"
+                          th:text="${promedio != null ? #numbers.formatDecimal(promedio, 1, 2) : '—'}">5.50</span>
+                </div>
+                <p class="text-muted mb-0 mt-1">
+                    % ponderado: <strong th:text="${#numbers.formatDecimal(sumaPonderaciones, 1, 1)} + '%'">70%</strong>
+                    <span class="text-muted" th:if="${faltaPonderacion}"
+                          th:text="'(falta ' + ${#numbers.formatDecimal(100 - sumaPonderaciones, 1, 1)} + '%)'">(falta 30%)</span>
+                </p>
+            </div>
+        </div>
+        <button type="button" class="btn btn-uniday" onclick="toggleCalculadora()">
+            <i class="bi bi-calculator"></i> Calculadora
+        </button>
+    </div>
+
+    <div class="d-none" id="calculadoraBody">
+        <div class="card card-uniday p-4 mb-4">
+            <h2 class="h5 fw-bold mb-3">Calculadora de nota necesaria</h2>
+            <div class="d-none" id="datosNotas"
+                 th:data-suma-ponderada="${sumaPonderada}"
+                 th:data-suma-ponderaciones="${sumaPonderaciones}"></div>
+            <div class="mb-3">
+                <label for="ponderacionExamen" class="form-label">Ponderación de la evaluación (%)</label>
+                <input type="number" class="form-control" id="ponderacionExamen" min="1" max="100" step="1"
+                       placeholder="Ej: 25" required>
+            </div>
+            <div class="mb-3">
+                <label for="notaObjetivo" class="form-label">Nota objetivo</label>
+                <input type="number" class="form-control" id="notaObjetivo" min="1" max="7" step="0.1" value="4.0">
+            </div>
+            <div class="mb-3">
+                <label for="notaExamen" class="form-label">Nota de la evaluación (opcional)</label>
+                <input type="number" class="form-control" id="notaExamen" min="1" max="7" step="0.1"
+                       placeholder="Ej: 5.5">
+            </div>
+            <button type="button" class="btn btn-uniday" onclick="calcularNota()">Calcular</button>
+            <div class="mt-3 fw-semibold" id="resultadoNota"></div>
+        </div>
+    </div>
+
+    <div class="card card-uniday p-4">
+        <div th:if="${formModo == 'nueva'}" class="card card-uniday p-3 mb-3 bg-light">
+            <h3 class="h6 fw-bold mb-2" th:text="${tituloForm}">Agregar nota</h3>
+            <form th:action="${formAction}" method="post">
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="nombre" name="nombre"
+                           th:value="${notaEditando != null ? notaEditando.nombre : ''}"
+                           placeholder="Ej: Certamen 1" required>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="valor" class="form-label">Nota</label>
+                        <input type="number" class="form-control" id="valor" name="valor" step="0.1" min="1" max="7"
+                               th:value="${notaEditando != null ? notaEditando.valor : ''}"
+                               placeholder="Ej: 5.5" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="ponderacion" class="form-label">Ponderación (%)</label>
+                        <input type="number" class="form-control" id="ponderacion" name="ponderacion" step="1" min="1" max="100"
+                               th:value="${notaEditando != null ? notaEditando.ponderacion : ''}"
+                               placeholder="Ej: 25" required>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-uniday">Agregar</button>
+                </div>
+            </form>
+        </div>
+
+        <h2 class="h5 fw-bold mb-3">Notas registradas</h2>
+        <p class="text-muted mb-0" th:if="${padres.isEmpty()}">No hay notas registradas para esta materia.</p>
+        <ul class="list-group list-group-flush" th:unless="${padres.isEmpty()}">
+            <li class="list-group-item px-0" th:each="p : ${padres}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold" th:text="${p.nota.nombre}">Certamen 1</div>
+                        <div class="text-muted small"
+                             th:text="'% ponderación: ' + ${#numbers.formatDecimal(p.nota.ponderacion, 1, 1)} + '%'">30%</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge"
+                              th:classappend="${(p.valorEfectivo != null ? p.valorEfectivo : p.nota.valor) >= 4.0 ? 'bg-success' : 'bg-danger'}"
+                              th:text="${#numbers.formatDecimal((p.valorEfectivo != null ? p.valorEfectivo : p.nota.valor), 1, 2)}">5.50</span>
+                        <div class="dropdown">
+                            <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                    title="Opciones" style="color: var(--uniday-azul);">
+                                <i class="bi bi-three-dots-vertical fs-5"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li th:if="${!(formModo == 'hija' and formTargetId == p.nota.id)}">
+                                    <a class="dropdown-item" th:href="@{/notas/materia/{id}(id=${materia.id}, nuevahija=${p.nota.id})}">
+                                        <i class="bi bi-plus-circle me-2 text-muted"></i>Agregar parte</a>
+                                </li>
+                                <li th:if="${!(formModo == 'editar' and formTargetId == p.nota.id)}">
+                                    <a class="dropdown-item" th:href="@{/notas/materia/{id}(id=${materia.id}, editando=${p.nota.id})}">
+                                        <i class="bi bi-pencil me-2 text-muted"></i>Editar</a>
+                                </li>
+                                <li>
+                                    <form th:action="@{/notas/{id}/eliminar(id=${p.nota.id})}" method="post"
+                                          onsubmit="return confirm('¿Eliminar esta nota y sus partes?');">
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="bi bi-trash me-2 text-muted"></i>Eliminar
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${formModo == 'hija' and formTargetId == p.nota.id}"
+                     class="card card-uniday p-3 mt-2 bg-light">
+                    <h3 class="h6 fw-bold mb-2" th:text="'Agregar parte a ' + ${padreNombre}">Agregar parte</h3>
+                    <form th:action="${formAction}" method="post">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre"
+                                   th:value="${nombreSugerido}"
+                                   placeholder="Ej: Parte 2" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="valor" class="form-label">Nota</label>
+                            <input type="number" class="form-control" id="valor" name="valor" step="0.1" min="1" max="7"
+                                   placeholder="Ej: 5.5" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ponderacion" class="form-label">Ponderación (%)</label>
+                            <input type="number" class="form-control" id="ponderacion" name="ponderacion" step="0.1" min="1" max="100"
+                                   th:value="${ponderacionSugerida}"
+                                   placeholder="Ej: 33.3">
+                        </div>
+                        <p class="text-muted small mb-1">Las demás partes se reparten automáticamente lo que quede hasta 100%.</p>
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="submit" class="btn btn-uniday">Agregar parte</button>
+                            <a th:href="@{/notas/materia/{id}(id=${materia.id})}"
+                               class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+
+                <div th:if="${formModo == 'editar' and formTargetId == p.nota.id}"
+                     class="card card-uniday p-3 mt-2 bg-light">
+                    <h3 class="h6 fw-bold mb-2" th:text="${tituloForm}">Editar nota</h3>
+                    <form th:action="${formAction}" method="post">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre"
+                                   th:value="${notaEditando != null ? notaEditando.nombre : ''}"
+                                   placeholder="Ej: Certamen 1" required>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="valor" class="form-label">Nota</label>
+                                <input type="number" class="form-control" id="valor" name="valor" step="0.1" min="1" max="7"
+                                       th:value="${notaEditando != null ? notaEditando.valor : ''}"
+                                       placeholder="Ej: 5.5" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="ponderacion" class="form-label">Ponderación (%)</label>
+                                <input type="number" class="form-control" id="ponderacion" name="ponderacion" step="1" min="1" max="100"
+                                       th:value="${notaEditando != null ? notaEditando.ponderacion : ''}"
+                                       placeholder="Ej: 25" required>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="submit" class="btn btn-uniday">Guardar</button>
+                            <a th:href="@{/notas/materia/{id}(id=${materia.id})}"
+                               class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+
+                <div th:if="${!p.hijas.isEmpty()}" class="border-start ps-3 ms-2 mt-1">
+                    <div th:each="h : ${p.hijas}">
+                        <div class="d-flex justify-content-between align-items-center py-2 border-top border-secondary-subtle">
+                            <div>
+                                <div th:text="${h.nombre}">Parte A</div>
+                                <div class="text-muted small"
+                                     th:text="'% del padre: ' + ${#numbers.formatDecimal(h.ponderacion, 1, 1)} + '%'">50%</div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge"
+                                      th:classappend="${h.valor >= 4.0 ? 'bg-success' : 'bg-danger'}"
+                                      th:text="${#numbers.formatDecimal(h.valor, 1, 2)}">6.50</span>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                                            title="Opciones" style="color: var(--uniday-azul);">
+                                        <i class="bi bi-three-dots-vertical fs-5"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li th:if="${!(formModo == 'editar' and formTargetId == h.id)}">
+                                            <a class="dropdown-item" th:href="@{/notas/materia/{id}(id=${materia.id}, editando=${h.id})}">
+                                                <i class="bi bi-pencil me-2 text-muted"></i>Editar</a>
+                                        </li>
+                                        <li>
+                                            <form th:action="@{/notas/{id}/eliminar(id=${h.id})}" method="post"
+                                                  onsubmit="return confirm('¿Eliminar esta parte?');">
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="bi bi-trash me-2 text-muted"></i>Eliminar
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div th:if="${formModo == 'editar' and formTargetId == h.id}"
+                             class="card card-uniday p-3 mt-2 bg-light">
+                            <h3 class="h6 fw-bold mb-2" th:text="${tituloForm}">Editar nota</h3>
+                            <form th:action="${formAction}" method="post">
+                                <div class="mb-3">
+                                    <label for="nombre" class="form-label">Nombre</label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre"
+                                           th:value="${notaEditando != null ? notaEditando.nombre : ''}"
+                                           placeholder="Ej: Certamen 1" required>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="valor" class="form-label">Nota</label>
+                                        <input type="number" class="form-control" id="valor" name="valor" step="0.1" min="1" max="7"
+                                               th:value="${notaEditando != null ? notaEditando.valor : ''}"
+                                               placeholder="Ej: 5.5" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="ponderacion" class="form-label">Ponderación (%)</label>
+                                        <input type="number" class="form-control" id="ponderacion" name="ponderacion" step="1" min="1" max="100"
+                                               th:value="${notaEditando != null ? notaEditando.ponderacion : ''}"
+                                               placeholder="Ej: 25" required>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2 mt-3">
+                                    <button type="submit" class="btn btn-uniday">Guardar</button>
+                                    <a th:href="@{/notas/materia/{id}(id=${materia.id})}"
+                                       class="btn btn-outline-secondary">Cancelar</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${p.hijas.isEmpty()}" class="text-muted small mt-1 ms-1">(sin partes — usa su valor directo)</div>
+            </li>
+        </ul>
+
+        </div>
+</div>
+
+<script>
+    function toggleCalculadora() {
+        document.getElementById('calculadoraBody').classList.toggle('d-none');
+    }
+
+    function calcularNota() {
+        var div = document.getElementById('datosNotas');
+        var sumaPonderada = parseFloat(div.dataset.sumaPonderada);
+        var sumaPonderaciones = parseFloat(div.dataset.sumaPonderaciones);
+        var resultado = document.getElementById('resultadoNota');
+
+        var ponderacionExamen = parseFloat(document.getElementById('ponderacionExamen').value);
+        if (isNaN(ponderacionExamen) || ponderacionExamen <= 0) {
+            resultado.textContent = 'Ingresa la ponderación de la evaluación.';
+            resultado.className = 'mt-3 fw-semibold text-muted';
+            return;
+        }
+
+        var objetivo = parseFloat(document.getElementById('notaObjetivo').value);
+        if (isNaN(objetivo) || objetivo <= 0) {
+            objetivo = 4.0;
+        }
+
+        var notaExamen = parseFloat(document.getElementById('notaExamen').value);
+        var total = sumaPonderaciones + ponderacionExamen;
+
+        if (!isNaN(notaExamen)) {
+            var promedioFinal = (sumaPonderada + notaExamen * ponderacionExamen) / total;
+            if (promedioFinal >= objetivo) {
+                resultado.textContent = '\u2713 Aprobado \u2014 promedio final: ' + promedioFinal.toFixed(2);
+                resultado.className = 'mt-3 fw-semibold text-success';
+            } else {
+                var necesaria = (objetivo * total - sumaPonderada) / ponderacionExamen;
+                resultado.textContent = 'Promedio: ' + promedioFinal.toFixed(2) + ' \u2014 Necesitas ' + necesaria.toFixed(2);
+                resultado.className = 'mt-3 fw-semibold text-danger';
+            }
+            return;
+        }
+
+        var necesaria = (objetivo * total - sumaPonderada) / ponderacionExamen;
+        if (necesaria <= 1) {
+            resultado.textContent = '\u2713 Aprobado sin más notas';
+            resultado.className = 'mt-3 fw-semibold text-success';
+        } else if (necesaria > 7) {
+            resultado.textContent = 'Imposible (máximo 7.0)';
+            resultado.className = 'mt-3 fw-semibold text-danger';
+        } else {
+            resultado.textContent = 'Necesitas ' + necesaria.toFixed(2) + ' en esa evaluación';
+            resultado.className = 'mt-3 fw-semibold';
+        }
+    }
+</script>
+
+</body>
+</html>

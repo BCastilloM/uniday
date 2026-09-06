@@ -14,7 +14,6 @@ public interface SemestreRepository extends JpaRepository<Semestre, Long> {
 
     Optional<Semestre> findByUsuarioIdAndActivoTrue(Long usuarioId);
 
-    /** Pone en false el flag activo de todos los semestres del usuario (modificación masiva). */
     @org.springframework.data.jpa.repository.Modifying
     @org.springframework.transaction.annotation.Transactional
     @org.springframework.data.jpa.repository.Query("UPDATE Semestre s SET s.activo = false WHERE s.usuarioId = :usuarioId")

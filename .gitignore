@@ -38,3 +38,9 @@ out/
 
 # H2 antigua (ya no se usa, ahora MySQL)
 data/
+
+# Hash del esquema aplicado en la BD (lo genera dev.ps1, no se versiona)
+.uniday-db-hash
+
+# Estado local de herramientas de desarrollo
+.codegraph/
