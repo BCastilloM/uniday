@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.time.LocalDate;
 
 @Controller
 @RequestMapping("/materias")
@@ -113,11 +114,18 @@ public class MateriaController {
                           @RequestParam(required = false) String descripcion,
                           @RequestParam(required = false) String profesor,
                           @RequestParam(required = false) Integer asistenciaExigida,
+                          @RequestParam(required = false) LocalDate fechaInicioClases,
+                          @RequestParam(required = false) LocalDate fechaFinClases,
                           HttpSession session,
                           RedirectAttributes redirectAttributes) {
 
         if (nombre == null || nombre.trim().isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "El nombre de la materia no puede estar vacío.");
+            return "redirect:/materias/nueva?semestreId=" + semestreId;
+        }
+
+        if (fechaInicioClases != null && fechaFinClases != null && fechaFinClases.isBefore(fechaInicioClases)) {
+            redirectAttributes.addFlashAttribute("error", "La última clase no puede ser anterior a la primera.");
             return "redirect:/materias/nueva?semestreId=" + semestreId;
         }
 
@@ -137,6 +145,8 @@ public class MateriaController {
         materia.setDescripcion(descripcion != null && !descripcion.isBlank() ? descripcion.trim() : null);
         materia.setProfesor(profesor != null && !profesor.isBlank() ? profesor.trim() : null);
         materia.setAsistenciaExigida(asistenciaExigida != null ? asistenciaExigida : 75);
+        materia.setFechaInicioClases(fechaInicioClases);
+        materia.setFechaFinClases(fechaFinClases);
         materiaRepository.save(materia);
 
         redirectAttributes.addFlashAttribute("success", "Materia creada correctamente.");
@@ -174,11 +184,18 @@ public class MateriaController {
                              @RequestParam(required = false) String descripcion,
                              @RequestParam(required = false) String profesor,
                              @RequestParam(required = false) Integer asistenciaExigida,
+                             @RequestParam(required = false) LocalDate fechaInicioClases,
+                             @RequestParam(required = false) LocalDate fechaFinClases,
                              HttpSession session,
                              RedirectAttributes redirectAttributes) {
 
         if (nombre == null || nombre.trim().isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "El nombre de la materia no puede estar vacío.");
+            return "redirect:/materias/" + id + "/editar";
+        }
+
+        if (fechaInicioClases != null && fechaFinClases != null && fechaFinClases.isBefore(fechaInicioClases)) {
+            redirectAttributes.addFlashAttribute("error", "La última clase no puede ser anterior a la primera.");
             return "redirect:/materias/" + id + "/editar";
         }
 
@@ -202,6 +219,8 @@ public class MateriaController {
         materia.setDescripcion(descripcion != null && !descripcion.isBlank() ? descripcion.trim() : null);
         materia.setProfesor(profesor != null && !profesor.isBlank() ? profesor.trim() : null);
         materia.setAsistenciaExigida(asistenciaExigida != null ? asistenciaExigida : 75);
+        materia.setFechaInicioClases(fechaInicioClases);
+        materia.setFechaFinClases(fechaFinClases);
         materiaRepository.save(materia);
 
         redirectAttributes.addFlashAttribute("success", "Materia actualizada correctamente.");

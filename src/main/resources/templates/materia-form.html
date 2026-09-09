@@ -49,6 +49,18 @@
                 <input type="number" class="form-control" id="asistenciaExigida" name="asistenciaExigida"
                        th:value="${materia.asistenciaExigida}" min="0" max="100">
             </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="fechaInicioClases" class="form-label">Primera clase</label>
+                    <input type="date" class="form-control" id="fechaInicioClases" name="fechaInicioClases"
+                           th:value="${materia.fechaInicioClases}">
+                </div>
+                <div class="col-md-6 mt-3 mt-md-0">
+                    <label for="fechaFinClases" class="form-label">Última clase</label>
+                    <input type="date" class="form-control" id="fechaFinClases" name="fechaFinClases"
+                           th:value="${materia.fechaFinClases}">
+                </div>
+            </div>
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-uniday">Guardar</button>
                 <a th:href="@{/materias(semestre=${semestre.id})}" class="btn btn-outline-secondary">Cancelar</a>

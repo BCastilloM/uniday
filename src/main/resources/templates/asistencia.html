@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Uniday - Asistencia')}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: body}"></div>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="text-uniday-azul fw-bold mb-1">Asistencia</h1>
+            <p class="text-muted mb-0" th:text="${semestre.nombre}">Semestre actual</p>
+        </div>
+        <a th:href="@{/materias}" class="btn btn-outline-secondary">Ver materias</a>
+    </div>
+
+    <div class="alert alert-info" th:if="${materias.isEmpty()}">
+        Este semestre no tiene materias todavía.
+    </div>
+
+    <div class="card card-uniday mb-4">
+        <div class="card-body">
+            <h5 class="text-uniday-azul">Feriados y recesos</h5>
+            <p class="text-muted small">Estas fechas no se contarán como clases ni afectarán tu porcentaje.</p>
+            <form th:action="@{/asistencia/no-clases}" method="post" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label for="fechaInicioNoClase" class="form-label">Desde</label>
+                    <input id="fechaInicioNoClase" name="fechaInicio" type="date" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="fechaFinNoClase" class="form-label">Hasta</label>
+                    <input id="fechaFinNoClase" name="fechaFin" type="date" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="motivoNoClase" class="form-label">Motivo</label>
+                    <input id="motivoNoClase" name="motivo" type="text" class="form-control" placeholder="Feriado, receso...">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-uniday w-100">Agregar</button>
+                </div>
+            </form>
+            <div class="table-responsive mt-3" th:if="${!diasNoClase.isEmpty()}">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>Período</th><th>Motivo</th><th></th></tr></thead>
+                    <tbody>
+                    <tr th:each="dia : ${diasNoClase}">
+                        <td><span th:text="${dia.fechaInicio}">2026-09-18</span> a <span th:text="${dia.fechaFin}">2026-09-18</span></td>
+                        <td th:text="${dia.motivo}">Feriado</td>
+                        <td class="text-end">
+                            <form th:action="@{/asistencia/no-clases/{id}/eliminar(id=${dia.id})}" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar período">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-uniday mb-4" th:each="materia : ${materias}">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                <div>
+                    <h4 class="text-uniday-azul mb-1" th:text="${materia.nombre}">Materia</h4>
+                    <span class="text-muted">Exigida: <strong th:text="${materia.asistenciaExigida} + '%'">75%</strong></span>
+                    <div class="small text-muted" th:if="${materia.fechaInicioClases != null and materia.fechaFinClases != null}">
+                        Período: <span th:text="${materia.fechaInicioClases}">2026-03-01</span> a
+                        <span th:text="${materia.fechaFinClases}">2026-07-15</span>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div class="fs-3 fw-bold" th:classappend="${porcentajes[materia.id] >= materia.asistenciaExigida ? 'text-success' : 'text-danger'}"
+                         th:text="${#numbers.formatDecimal(porcentajes[materia.id], 1, 1)} + '%'">0,0%</div>
+                    <small class="text-muted">asistencia actual</small>
+                </div>
+            </div>
+
+            <div class="alert alert-warning py-2" th:if="${resumenes[materia.id]['totalClases'] > 0}">
+                Has faltado <strong th:text="${resumenes[materia.id]['faltasRegistradas']}">0</strong> de
+                <strong th:text="${resumenes[materia.id]['totalClases']}">30</strong> clases.
+                Puedes faltar <strong th:text="${resumenes[materia.id]['faltasRestantes']}">7</strong> más.
+                <span th:if="${resumenes[materia.id]['ultimaFechaParaFaltar'] != null}">
+                    Tu última fecha para faltar es
+                    <strong th:text="${resumenes[materia.id]['ultimaFechaParaFaltar']}">2026-06-10</strong>.
+                </span>
+                <span th:if="${resumenes[materia.id]['ultimaFechaParaFaltar'] == null}">
+                    Ya no tienes faltas disponibles sin bajar del mínimo.
+                </span>
+            </div>
+            <div class="alert alert-secondary py-2" th:if="${resumenes[materia.id]['totalClases'] == 0}">
+                Define las fechas de clases y agrega horarios para calcular tu fecha límite.
+            </div>
+
+            <form th:action="@{/asistencia}" method="post" class="row g-2 align-items-end mb-3">
+                <input type="hidden" name="materiaId" th:value="${materia.id}">
+                <div class="col-sm-4 col-md-3">
+                    <label class="form-label" th:for="'fecha-' + ${materia.id}">Fecha de clase</label>
+                    <input class="form-control" type="date" name="fecha" th:id="'fecha-' + ${materia.id}" th:value="${hoy}" required>
+                </div>
+                <div class="col-sm-4 col-md-3">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" name="presente" th:id="'presente-' + ${materia.id}" value="true" checked>
+                        <label class="form-check-label" th:for="'presente-' + ${materia.id}">Presente</label>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-md-3">
+                    <button type="submit" class="btn btn-uniday w-100">Guardar clase</button>
+                </div>
+            </form>
+
+            <div class="table-responsive" th:if="${!asistenciasPorMateria[materia.id].isEmpty()}">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="asistencia : ${asistenciasPorMateria[materia.id]}">
+                        <td th:text="${asistencia.fecha}">2026-09-08</td>
+                        <td>
+                            <span class="badge bg-success" th:if="${asistencia.presente}">Presente</span>
+                            <span class="badge bg-danger" th:unless="${asistencia.presente}">Ausente</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-muted small mb-0" th:if="${asistenciasPorMateria[materia.id].isEmpty()}">
+                Aún no hay clases registradas para esta materia.
+            </p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

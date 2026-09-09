@@ -1,6 +1,7 @@
 package cl.grupo4.uniday.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "materias")
@@ -29,6 +30,12 @@ public class Materia {
 
     @Column(name = "asistencia_exigida", nullable = false)
     private int asistenciaExigida = 75;
+
+    @Column(name = "fecha_inicio_clases")
+    private LocalDate fechaInicioClases;
+
+    @Column(name = "fecha_fin_clases")
+    private LocalDate fechaFinClases;
 
     public Materia() {
     }
@@ -95,5 +102,21 @@ public class Materia {
 
     public void setAsistenciaExigida(int asistenciaExigida) {
         this.asistenciaExigida = asistenciaExigida;
+    }
+
+    public LocalDate getFechaInicioClases() {
+        return fechaInicioClases;
+    }
+
+    public void setFechaInicioClases(LocalDate fechaInicioClases) {
+        this.fechaInicioClases = fechaInicioClases;
+    }
+
+    public LocalDate getFechaFinClases() {
+        return fechaFinClases;
+    }
+
+    public void setFechaFinClases(LocalDate fechaFinClases) {
+        this.fechaFinClases = fechaFinClases;
     }
 }

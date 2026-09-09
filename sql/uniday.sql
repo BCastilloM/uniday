@@ -65,10 +65,38 @@ CREATE TABLE IF NOT EXISTS materias (
     creditos           INT          NOT NULL,
     descripcion        TEXT         NULL,
     asistencia_exigida INT          NOT NULL,
+    fecha_inicio_clases DATE        NULL,
+    fecha_fin_clases    DATE        NULL,
     PRIMARY KEY (id),
     KEY idx_materias_semestre_id (semestre_id),
     CONSTRAINT fk_materias_semestre
         FOREIGN KEY (semestre_id) REFERENCES semestres (id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS dias_no_clase (
+    id            BIGINT       NOT NULL AUTO_INCREMENT,
+    semestre_id   BIGINT       NOT NULL,
+    fecha_inicio  DATE         NOT NULL,
+    fecha_fin     DATE         NOT NULL,
+    motivo        VARCHAR(120) NULL,
+    PRIMARY KEY (id),
+    KEY idx_dias_no_clase_semestre_id (semestre_id),
+    CONSTRAINT fk_dias_no_clase_semestre
+        FOREIGN KEY (semestre_id) REFERENCES semestres (id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS asistencias (
+    id          BIGINT      NOT NULL AUTO_INCREMENT,
+    materia_id  BIGINT      NOT NULL,
+    fecha       DATE        NOT NULL,
+    presente    BOOLEAN     NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_asistencias_materia_fecha (materia_id, fecha),
+    KEY idx_asistencias_materia_id (materia_id),
+    CONSTRAINT fk_asistencias_materia
+        FOREIGN KEY (materia_id) REFERENCES materias (id)
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
