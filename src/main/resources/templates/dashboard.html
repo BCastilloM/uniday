@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Uniday - Dashboard')}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: body}"></div>
+
+<main class="container py-4 dashboard">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <p class="text-uppercase text-uniday-morado fw-bold small mb-1">Resumen académico</p>
+            <h1 class="text-uniday-azul fw-bold mb-1" th:text="${semestre.nombre}">Semestre activo</h1>
+            <p class="text-muted mb-0">Todo lo importante de tu semestre, en un solo lugar.</p>
+        </div>
+        <a th:href="@{/semestres}" class="btn btn-outline-primary"><i class="bi bi-arrow-left-right me-1"></i> Cambiar semestre</a>
+    </div>
+
+    <section class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="dashboard-stat stat-purple h-100">
+                <i class="bi bi-journal-bookmark"></i>
+                <span>Materias</span>
+                <strong th:text="${cantidadMaterias}">0</strong>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="dashboard-stat stat-blue h-100">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Promedio general</span>
+                <strong th:text="${promedioGeneral != null ? #numbers.formatDecimal(promedioGeneral, 1, 2) : '—'}">—</strong>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="dashboard-stat stat-green h-100">
+                <i class="bi bi-calendar2-week"></i>
+                <span>Horario configurado</span>
+                <strong th:text="${#numbers.formatDecimal(porcentajeHorario, 1, 0) + '%'}">0%</strong>
+                <small th:text="${materiasConHorario} + ' de ' + ${cantidadMaterias} + ' materias'">0 de 0 materias</small>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="dashboard-stat stat-orange h-100">
+                <i class="bi bi-lightning-charge"></i>
+                <span>Próximas actividades</span>
+                <strong th:text="${proximasActividades.size()}">0</strong>
+                <small>pendientes</small>
+            </div>
+        </div>
+    </section>
+
+    <div class="row g-4">
+        <section class="col-lg-7">
+            <div class="dashboard-panel h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h2 class="h4 text-uniday-azul fw-bold mb-1">Rendimiento por materia</h2>
+                        <p class="text-muted small mb-0">Promedios calculados con las notas registradas.</p>
+                    </div>
+                    <a th:href="@{/notas}" class="btn btn-sm btn-light text-uniday-azul">Ver notas <i class="bi bi-arrow-up-right"></i></a>
+                </div>
+                <div class="subject-row" th:each="materia : ${materias}">
+                    <div class="subject-marker"></div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between gap-2">
+                            <strong th:text="${materia.nombre}">Materia</strong>
+                            <span class="fw-bold" th:classappend="${materia.promedio != null and materia.promedio >= 4 ? 'text-success' : 'text-muted'}"
+                                  th:text="${materia.promedio != null ? #numbers.formatDecimal(materia.promedio, 1, 2) : 'Sin notas'}">Sin notas</span>
+                        </div>
+                        <small class="text-muted" th:text="${materia.cantidadNotas} + ' notas registradas'">0 notas registradas</small>
+                    </div>
+                </div>
+                <div class="empty-state" th:if="${materias.isEmpty()}">
+                    <i class="bi bi-journal-plus"></i>
+                    <p>Aún no tienes materias en este semestre.</p>
+                    <a th:href="@{/materias/nueva}" class="btn btn-uniday btn-sm">Agregar materia</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="col-lg-5">
+            <div class="dashboard-panel h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h2 class="h4 text-uniday-azul fw-bold mb-1">Lo que viene</h2>
+                        <p class="text-muted small mb-0">Tus siguientes entregas y evaluaciones.</p>
+                    </div>
+                    <a th:href="@{/calendario}" class="btn btn-sm btn-light text-uniday-azul">Calendario <i class="bi bi-arrow-up-right"></i></a>
+                </div>
+                <div class="activity-row" th:each="actividad : ${proximasActividades}">
+                    <div class="activity-date">
+                        <strong th:text="${#temporals.format(actividad.fecha, 'dd')}">12</strong>
+                        <span th:text="${#temporals.format(actividad.fecha, 'MMM')}">OCT</span>
+                    </div>
+                    <div>
+                        <strong class="d-block" th:text="${actividad.titulo}">Actividad</strong>
+                        <small class="text-muted" th:text="${actividad.materiaNombre} + ' · ' + ${actividad.tipo}">Materia · tarea</small>
+                    </div>
+                </div>
+                <div class="empty-state" th:if="${proximasActividades.isEmpty()}">
+                    <i class="bi bi-check2-circle"></i>
+                    <p>No tienes actividades próximas.</p>
+                    <a th:href="@{/calendario/nuevo}" class="btn btn-outline-primary btn-sm">Crear actividad</a>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<style>
+    .dashboard-stat, .dashboard-panel { border-radius: 1rem; box-shadow: 0 10px 30px rgba(25, 37, 132, .1); }
+    .dashboard-stat { color: #fff; padding: 1.25rem; min-height: 145px; display: flex; flex-direction: column; }
+    .dashboard-stat i { font-size: 1.4rem; margin-bottom: .75rem; }
+    .dashboard-stat span { font-size: .8rem; font-weight: 600; opacity: .9; }
+    .dashboard-stat strong { font-size: 2rem; line-height: 1.2; margin-top: .25rem; }
+    .dashboard-stat small { opacity: .8; margin-top: .15rem; }
+    .stat-purple { background: #6f42c1; } .stat-blue { background: #1769aa; }
+    .stat-green { background: #218739; } .stat-orange { background: #c66a17; }
+    .dashboard-panel { background: #fff; padding: 1.5rem; }
+    .subject-row, .activity-row { display: flex; align-items: center; gap: .8rem; padding: .85rem 0; border-top: 1px solid #edf0f7; }
+    .subject-marker { width: 8px; height: 38px; border-radius: 4px; background: var(--uniday-morado); flex-shrink: 0; }
+    .activity-date { background: #eef8fb; color: var(--uniday-azul); min-width: 48px; padding: .35rem; text-align: center; border-radius: .5rem; }
+    .activity-date strong, .activity-date span { display: block; line-height: 1.1; } .activity-date span { font-size: .7rem; text-transform: uppercase; }
+    .empty-state { color: #6c757d; text-align: center; padding: 1.5rem .5rem .25rem; } .empty-state i { font-size: 2rem; color: var(--uniday-celeste); }
+    .empty-state p { margin: .5rem 0 1rem; }
+</style>
+</body>
+</html>

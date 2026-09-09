@@ -23,14 +23,6 @@ public class AuthController {
         this.usuarioRepository = usuarioRepository;
     }
 
-    @GetMapping("/")
-    public String raiz(HttpSession session) {
-        if (session.getAttribute(LoginInterceptor.SESSION_USUARIO_ID) != null) {
-            return "redirect:/materias";
-        }
-        return "redirect:/login";
-    }
-
     @GetMapping("/registro")
     public String mostrarRegistro(Model model) {
         model.addAttribute("usuario", new Usuario());
@@ -105,7 +97,7 @@ public class AuthController {
 
         session.setAttribute(LoginInterceptor.SESSION_USUARIO_ID, usuario.getId());
         session.setAttribute(LoginInterceptor.SESSION_NOMBRE, usuario.getNombre());
-        return "redirect:/semestres";
+        return "redirect:/";
     }
 
     @GetMapping("/logout")
