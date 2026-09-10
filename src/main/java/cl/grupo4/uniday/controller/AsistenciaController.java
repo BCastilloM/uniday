@@ -231,7 +231,7 @@ public class AsistenciaController {
         double porcentaje = totalClases == 0 ? 0.0 : asistidas * 100.0 / totalClases;
 
         long faltasMaximas = Math.max(0,
-                (long) Math.floor(planificadasBrutas * (100.0 - materia.getAsistenciaExigida()) / 100.0) - descontadas);
+                (long) Math.floor(totalClases * (100.0 - materia.getAsistenciaExigida()) / 100.0));
         long faltasRestantes = Math.max(0, faltasMaximas - ausentes);
 
         List<LocalDate> proximasClases = new ArrayList<>();
