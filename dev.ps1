@@ -71,6 +71,15 @@ function Get-UnidaySqlHash {
 # el initdb únicamente sobre un volumen VACÍO, así que si agregamos tablas al
 # SQL (nueva funcionalidad) y no borramos el volumen, la app cae al arrancar
 # con ddl-auto=validate. Este check evita ese error de forma automática.
+#
+# OJO: el volumen real lo nombra Docker Compose con prefijo del proyecto
+# (carpeta actual, ej: unidayfinal_mysql-data), así que se detecta por la
+# etiqueta com.docker.compose.project en vez de hardcodear un nombre.
+function Get-ComposeVolumes {
+    $proyecto = Split-Path -Leaf $ScriptDir
+    return @(docker volume ls --filter "label=com.docker.compose.project=$proyecto" --format '{{.Name}}')
+}
+
 function Sync-MysqlSchema {
     $sqlHash = Get-UnidaySqlHash
 
@@ -79,18 +88,21 @@ function Sync-MysqlSchema {
         $marker = (Get-Content -LiteralPath $MarkerFile -Raw).Trim()
     }
 
-    docker volume inspect uniday_mysql-data 2>$null | Out-Null
-    $volumeExists = ($LASTEXITCODE -eq 0)
+    $volumenes = Get-ComposeVolumes
+    $hayVolumen = $volumenes.Count -gt 0
 
-    if ($volumeExists -and $marker -eq $sqlHash) {
+    if ($hayVolumen -and $marker -eq $sqlHash) {
         Write-Host "  Esquema vigente (sql/uniday.sql sin cambios)." -ForegroundColor Green
         return
     }
 
-    if ($volumeExists) {
+    if ($hayVolumen) {
         Write-Host "  Cambios detectados en sql/uniday.sql -> recreando la BD..." -ForegroundColor Yellow
-        docker compose down 2>&1 | ForEach-Object { Write-Host "  $_" }
-        docker volume rm uniday_mysql-data 2>&1 | ForEach-Object { Write-Host "  $_" }
+        # down -v elimina contenedores Y volúmenes del proyecto: la próxima vez
+        # el initdb corre sobre un volumen vacío y aplica el esquema nuevo.
+        docker compose down -v 2>&1 | ForEach-Object { Write-Host "  $_" }
+        # Limpieza tolerante de volúmenes huérfanos de proyectos anteriores.
+        docker volume rm uniday_mysql-data 2>&1 | Out-Null
     } else {
         Write-Host "  Primera vez o volumen inexistente -> BD se crea desde cero." -ForegroundColor Yellow
     }

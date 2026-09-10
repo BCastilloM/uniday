@@ -37,6 +37,12 @@ public class Materia {
     @Column(name = "fecha_fin_clases")
     private LocalDate fechaFinClases;
 
+    @Column(nullable = false, length = 7)
+    private String color = "#3B82F6";
+
+    @Column(nullable = false, length = 30)
+    private String icono = "bi-book";
+
     public Materia() {
     }
 
@@ -118,5 +124,21 @@ public class Materia {
 
     public void setFechaFinClases(LocalDate fechaFinClases) {
         this.fechaFinClases = fechaFinClases;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public String getIcono() {
+        return icono;
+    }
+
+    public void setIcono(String icono) {
+        this.icono = icono;
     }
 }

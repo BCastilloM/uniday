@@ -9,7 +9,13 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="text-uniday-azul fw-bold mb-1">Asistencia</h1>
-            <p class="text-muted mb-0" th:text="${semestre.nombre}">Semestre actual</p>
+            <p class="text-muted mb-0">
+                <span th:text="${semestre.nombre}">Semestre actual</span>
+                <span th:if="${semestre.fechaInicio != null and semestre.fechaFin != null}">
+                    – <span th:text="${#temporals.format(semestre.fechaInicio, 'dd/MM/yyyy')}">01/03/2026</span>
+                    a <span th:text="${#temporals.format(semestre.fechaFin, 'dd/MM/yyyy')}">30/06/2026</span>
+                </span>
+            </p>
         </div>
         <a th:href="@{/materias}" class="btn btn-outline-secondary">Ver materias</a>
     </div>
@@ -18,122 +24,379 @@
         Este semestre no tiene materias todavía.
     </div>
 
-    <div class="card card-uniday mb-4">
+    <div class="card card-uniday mb-4" th:each="materia : ${materias}">
         <div class="card-body">
-            <h5 class="text-uniday-azul">Feriados y recesos</h5>
-            <p class="text-muted small">Estas fechas no se contarán como clases ni afectarán tu porcentaje.</p>
-            <form th:action="@{/asistencia/no-clases}" method="post" class="row g-2 align-items-end">
-                <div class="col-md-3">
-                    <label for="fechaInicioNoClase" class="form-label">Desde</label>
-                    <input id="fechaInicioNoClase" name="fechaInicio" type="date" class="form-control" required>
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="materia-icono" th:style="'background-color:' + ${materia.color} + ';'">
+                            <i th:class="${materia.icono}"></i>
+                        </span>
+                        <h4 class="text-uniday-azul mb-1" th:text="${materia.nombre}">Materia</h4>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <label for="fechaFinNoClase" class="form-label">Hasta</label>
-                    <input id="fechaFinNoClase" name="fechaFin" type="date" class="form-control" required>
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+                <span class="chip-asistencia chip-actual">
+                    Actual <strong th:text="${#numbers.formatDecimal(porcentajes[materia.id], 1, 1)} + '%'">85,5%</strong>
+                </span>
+                <span class="chip-asistencia chip-exigida">
+                    Exigida <strong th:text="${materia.asistenciaExigida} + '%'">75%</strong>
+                </span>
+            </div>
+            </div>
+
+            <div class="banner-asistencia banner-muted mb-3" th:if="${semestre.fechaInicio == null or semestre.fechaFin == null}">
+                Define el período del semestre (desde/hasta) para calcular las clases.
+            </div>
+            <div class="banner-asistencia banner-muted mb-3"
+                 th:if="${semestre.fechaInicio != null and semestre.fechaFin != null and resumenes[materia.id]['totalClases'] == 0}">
+                Para calcular tus clases define el período del semestre (desde/hasta) y agrega horarios a esta materia.
+            </div>
+            <div class="banner-asistencia banner-resumen mb-3"
+                 th:if="${semestre.fechaInicio != null and semestre.fechaFin != null and resumenes[materia.id]['totalClases'] > 0}"
+                 th:id="'banner-' + ${materia.id}">
+                <div class="banner-texto">
+                    Has ido a <strong th:text="${resumenes[materia.id]['asistidas']}">15</strong> de
+                    <strong th:text="${resumenes[materia.id]['totalClases']}">30</strong> clases
+                    <span th:if="${resumenes[materia.id]['faltasRestantes'] > 0}">
+                        - Puedes faltar a <strong th:text="${resumenes[materia.id]['faltasRestantes']}">7</strong>
+                    </span>
+                    <span th:if="${resumenes[materia.id]['faltasRestantes'] == 0 and resumenes[materia.id]['ausentes'] > 0}">
+                        - Ya no puedes faltar más
+                    </span>
+                    <span th:if="${resumenes[materia.id]['faltasRestantes'] == 0 and resumenes[materia.id]['ausentes'] == 0}">
+                        - No puedes faltar a ninguna: se exige <strong th:text="${materia.asistenciaExigida}">90</strong>% y son
+                        <strong th:text="${resumenes[materia.id]['totalClases']}">4</strong> clases
+                    </span>
+                    <small class="d-block mt-1 text-muted" th:if="${!resumenes[materia.id]['proximasClases'].isEmpty()}">
+                        Próximas clases:
+                        <span th:each="pc, st : ${resumenes[materia.id]['proximasClases']}"
+                              th:text="${st.first ? #temporals.format(pc, 'dd MMM') : ', ' + #temporals.format(pc, 'dd MMM')}">15 sep</span>
+                    </small>
                 </div>
-                <div class="col-md-4">
-                    <label for="motivoNoClase" class="form-label">Motivo</label>
-                    <input id="motivoNoClase" name="motivo" type="text" class="form-control" placeholder="Feriado, receso...">
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-uniday w-100">Agregar</button>
-                </div>
-            </form>
-            <div class="table-responsive mt-3" th:if="${!diasNoClase.isEmpty()}">
-                <table class="table table-sm align-middle mb-0">
-                    <thead><tr><th>Período</th><th>Motivo</th><th></th></tr></thead>
+                <span class="badge-bajo"
+                      th:if="${(resumenes[materia.id]['asistidas'] + resumenes[materia.id]['ausentes']) > 0 and resumenes[materia.id]['faltasRestantes'] <= 0 and resumenes[materia.id]['porcentaje'] < materia.asistenciaExigida}">
+                    Estás bajo el <strong th:text="${materia.asistenciaExigida}">85</strong>% exigido
+                </span>
+            </div>
+
+            <h6 class="text-uppercase text-muted small fw-bold mb-2" th:if="${!clasesPorMateria[materia.id].isEmpty()}">
+                Clases del semestre
+            </h6>
+            <div class="clase-scroll" th:if="${!clasesPorMateria[materia.id].isEmpty()}">
+                <table class="table table-sm align-middle mb-0 w-100">
+                    <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th class="text-end"></th>
+                    </tr>
+                    </thead>
                     <tbody>
-                    <tr th:each="dia : ${diasNoClase}">
-                        <td><span th:text="${dia.fechaInicio}">2026-09-18</span> a <span th:text="${dia.fechaFin}">2026-09-18</span></td>
-                        <td th:text="${dia.motivo}">Feriado</td>
+                    <tr th:each="cl : ${clasesPorMateria[materia.id]}" th:attr="data-fecha=${cl.fecha}">
+                        <td>
+                            <span class="fw-semibold" th:text="'Clase ' + ${cl.claseNumero} + ':'">Clase 1:</span>
+                            <span th:text="${cl.diaNombre}">Miércoles</span>
+                            <span class="text-muted" th:text="${#temporals.format(cl.fecha, 'dd/MM/yyyy')}">23/03/2026</span>
+                        </td>
                         <td class="text-end">
-                            <form th:action="@{/asistencia/no-clases/{id}/eliminar(id=${dia.id})}" method="post">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar período">Eliminar</button>
+                            <form th:action="@{/asistencia}" method="post" class="d-inline-flex me-1"
+                                  th:attr="data-marcar-url=@{/asistencia/marcar}" data-marcar-url="/asistencia/marcar">
+                                <input type="hidden" name="materiaId" th:value="${materia.id}">
+                                <input type="hidden" name="fecha" th:value="${cl.fecha}">
+                                <input type="hidden" name="accion" value="presente">
+                                <button type="submit" class="asistencia-bar bar-presente"
+                                        th:data-activo="${cl.estado == 'presente'}">
+                                    <span class="bar-dot"></span>
+                                    Presente
+                                </button>
+                            </form>
+                            <form th:action="@{/asistencia}" method="post" class="d-inline-flex"
+                                  th:attr="data-marcar-url=@{/asistencia/marcar}" data-marcar-url="/asistencia/marcar">
+                                <input type="hidden" name="materiaId" th:value="${materia.id}">
+                                <input type="hidden" name="fecha" th:value="${cl.fecha}">
+                                <input type="hidden" name="accion" value="ausente">
+                                <button type="submit" class="asistencia-bar bar-ausente"
+                                        th:data-activo="${cl.estado == 'ausente'}">
+                                    <span class="bar-dot"></span>
+                                    Ausente
+                                </button>
+                            </form>
+                            <form th:action="@{/asistencia}" method="post" class="d-inline-flex ms-1"
+                                  th:attr="data-marcar-url=@{/asistencia/marcar}" data-marcar-url="/asistencia/marcar">
+                                <input type="hidden" name="materiaId" th:value="${materia.id}">
+                                <input type="hidden" name="fecha" th:value="${cl.fecha}">
+                                <input type="hidden" name="accion" value="no_hubo">
+                                <button type="submit" class="asistencia-bar bar-cancelada"
+                                        th:data-activo="${cl.estado == 'no_hubo'}">
+                                    <span class="bar-dot"></span>
+                                    Cancelada
+                                </button>
                             </form>
                         </td>
                     </tr>
                     </tbody>
                 </table>
             </div>
-        </div>
-    </div>
-
-    <div class="card card-uniday mb-4" th:each="materia : ${materias}">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-                <div>
-                    <h4 class="text-uniday-azul mb-1" th:text="${materia.nombre}">Materia</h4>
-                    <span class="text-muted">Exigida: <strong th:text="${materia.asistenciaExigida} + '%'">75%</strong></span>
-                    <div class="small text-muted" th:if="${materia.fechaInicioClases != null and materia.fechaFinClases != null}">
-                        Período: <span th:text="${materia.fechaInicioClases}">2026-03-01</span> a
-                        <span th:text="${materia.fechaFinClases}">2026-07-15</span>
-                    </div>
-                </div>
-                <div class="text-end">
-                    <div class="fs-3 fw-bold" th:classappend="${porcentajes[materia.id] >= materia.asistenciaExigida ? 'text-success' : 'text-danger'}"
-                         th:text="${#numbers.formatDecimal(porcentajes[materia.id], 1, 1)} + '%'">0,0%</div>
-                    <small class="text-muted">asistencia actual</small>
-                </div>
-            </div>
-
-            <div class="alert alert-warning py-2" th:if="${resumenes[materia.id]['totalClases'] > 0}">
-                Has faltado <strong th:text="${resumenes[materia.id]['faltasRegistradas']}">0</strong> de
-                <strong th:text="${resumenes[materia.id]['totalClases']}">30</strong> clases.
-                Puedes faltar <strong th:text="${resumenes[materia.id]['faltasRestantes']}">7</strong> más.
-                <span th:if="${resumenes[materia.id]['ultimaFechaParaFaltar'] != null}">
-                    Tu última fecha para faltar es
-                    <strong th:text="${resumenes[materia.id]['ultimaFechaParaFaltar']}">2026-06-10</strong>.
+            <p class="text-muted small mb-0" th:if="${clasesPorMateria[materia.id].isEmpty()}">
+                <span th:if="${semestre.fechaInicio == null or semestre.fechaFin == null}">
+                    Define el período del semestre (desde/hasta) para calcular las clases.
                 </span>
-                <span th:if="${resumenes[materia.id]['ultimaFechaParaFaltar'] == null}">
-                    Ya no tienes faltas disponibles sin bajar del mínimo.
+                <span th:unless="${semestre.fechaInicio == null or semestre.fechaFin == null}">
+                    Esta materia no tiene clases en el semestre según su horario.
                 </span>
-            </div>
-            <div class="alert alert-secondary py-2" th:if="${resumenes[materia.id]['totalClases'] == 0}">
-                Define las fechas de clases y agrega horarios para calcular tu fecha límite.
-            </div>
-
-            <form th:action="@{/asistencia}" method="post" class="row g-2 align-items-end mb-3">
-                <input type="hidden" name="materiaId" th:value="${materia.id}">
-                <div class="col-sm-4 col-md-3">
-                    <label class="form-label" th:for="'fecha-' + ${materia.id}">Fecha de clase</label>
-                    <input class="form-control" type="date" name="fecha" th:id="'fecha-' + ${materia.id}" th:value="${hoy}" required>
-                </div>
-                <div class="col-sm-4 col-md-3">
-                    <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" name="presente" th:id="'presente-' + ${materia.id}" value="true" checked>
-                        <label class="form-check-label" th:for="'presente-' + ${materia.id}">Presente</label>
-                    </div>
-                </div>
-                <div class="col-sm-4 col-md-3">
-                    <button type="submit" class="btn btn-uniday w-100">Guardar clase</button>
-                </div>
-            </form>
-
-            <div class="table-responsive" th:if="${!asistenciasPorMateria[materia.id].isEmpty()}">
-                <table class="table table-sm align-middle mb-0">
-                    <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Estado</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="asistencia : ${asistenciasPorMateria[materia.id]}">
-                        <td th:text="${asistencia.fecha}">2026-09-08</td>
-                        <td>
-                            <span class="badge bg-success" th:if="${asistencia.presente}">Presente</span>
-                            <span class="badge bg-danger" th:unless="${asistencia.presente}">Ausente</span>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-            <p class="text-muted small mb-0" th:if="${asistenciasPorMateria[materia.id].isEmpty()}">
-                Aún no hay clases registradas para esta materia.
             </p>
         </div>
     </div>
 </div>
+
+<style>
+    .clase-scroll {
+        max-height: 9.75rem;
+        overflow-y: auto;
+    }
+
+    .asistencia-bar {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        border: 1.5px solid #d6dbe4;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #64748b;
+        padding: .42rem 1rem;
+        font-size: .9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all .15s ease;
+    }
+
+    .asistencia-bar .bar-dot {
+        width: .55rem;
+        height: .55rem;
+        border-radius: 999px;
+        background: currentColor;
+        opacity: .5;
+    }
+
+    .asistencia-bar:disabled {
+        opacity: .55;
+        cursor: wait;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .asistencia-bar[data-activo="true"] {
+        background: var(--uniday-morado);
+        border-color: var(--uniday-morado);
+        color: #fff;
+    }
+
+    .asistencia-bar[data-activo="true"] .bar-dot {
+        opacity: 1;
+    }
+
+    .asistencia-bar.bar-ausente[data-activo="true"] {
+        background: var(--uniday-celeste);
+        border-color: var(--uniday-celeste);
+        color: var(--uniday-azul);
+    }
+
+    .asistencia-bar.bar-cancelada[data-activo="true"] {
+        background: #94a3b8;
+        border-color: #94a3b8;
+        color: #fff;
+    }
+
+    .asistencia-bar:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .12);
+    }
+
+    .chip-asistencia {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        border-radius: 999px;
+        padding: .5rem 1.1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1;
+    }
+
+    .chip-actual {
+        background: rgba(181, 65, 250, .14);
+        color: #8b1fd6;
+    }
+
+    .chip-exigida {
+        background: rgba(79, 210, 233, .18);
+        color: var(--uniday-azul);
+    }
+
+    .banner-asistencia {
+        border: 1px solid rgba(181, 65, 250, .30);
+        border-left: 4px solid var(--uniday-morado);
+        border-radius: .5rem;
+        background: rgba(181, 65, 250, .12);
+        color: #8b1fd6;
+        padding: .5rem .875rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .75rem;
+    }
+
+    .banner-texto {
+        min-width: 0;
+    }
+
+    .badge-bajo {
+        background: rgba(239, 68, 68, .12);
+        border: 1px solid rgba(239, 68, 68, .35);
+        color: #DC2626;
+        border-radius: 999px;
+        padding: .3rem .75rem;
+        font-size: .78rem;
+        font-weight: 700;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .banner-asistencia.banner-muted {
+        border-color: #d6dbe4;
+        border-left-color: #94a3b8;
+        background: #f1f5f9;
+        color: #475569;
+    }
+</style>
+
+<script>
+    (function () {
+        var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+        function formatearPorcentaje(valor) {
+            return valor.toFixed(1).replace('.', ',') + '%';
+        }
+
+        function formatearFecha(iso) {
+            var partes = iso.split('-');
+            var dia = parseInt(partes[2], 10);
+            var mes = parseInt(partes[1], 10) - 1;
+            return dia + ' ' + MESES[mes];
+        }
+
+        function mostrarAviso(mensaje, esError) {
+            var contenedor = document.querySelector('.toast-container');
+            if (!contenedor) {
+                return;
+            }
+            var el = document.createElement('div');
+            el.className = 'toast align-items-center border-0 ' + (esError ? 'toast-error' : 'toast-uniday');
+            el.setAttribute('role', 'status');
+            el.setAttribute('aria-live', 'polite');
+            el.setAttribute('aria-atomic', 'true');
+            el.innerHTML = '<div class="d-flex"><div class="toast-body fw-semibold"></div>' +
+                '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button></div>';
+            el.querySelector('.toast-body').textContent = mensaje;
+            contenedor.appendChild(el);
+            var toast = new bootstrap.Toast(el, { delay: 3000 });
+            toast.show();
+            el.addEventListener('hidden.bs.toast', function () {
+                el.remove();
+            });
+        }
+
+        function pintarBanner(banner, resumen) {
+            var bajo = (resumen.asistidas + resumen.ausentes) > 0
+                && resumen.faltasRestantes <= 0
+                && resumen.porcentaje < resumen.exigida;
+            var texto = 'Has ido a ' + resumen.asistidas + ' de ' + resumen.totalClases + ' clases';
+            if (resumen.faltasRestantes > 0) {
+                texto += ' - Puedes faltar a <strong>' + resumen.faltasRestantes + '</strong>';
+            } else if (resumen.ausentes > 0) {
+                texto += ' - Ya no puedes faltar más';
+            } else {
+                texto += ' - No puedes faltar a ninguna: se exige ' + resumen.exigida + '% y son ' + resumen.totalClases + ' clases';
+            }
+            var html = '<div class="banner-texto">' + texto;
+            if (resumen.proximasClases && resumen.proximasClases.length > 0) {
+                html += '<small class="d-block mt-1 text-muted">Próximas clases: ' +
+                    resumen.proximasClases.map(formatearFecha).join(', ') + '</small>';
+            }
+            html += '</div>';
+            if (bajo) {
+                html += '<span class="badge-bajo">Estás bajo el <strong>' + resumen.exigida + '</strong>% exigido</span>';
+            }
+            banner.innerHTML = html;
+        }
+
+        function actualizarMateria(card, resumen, fecha, accion) {
+            var chipActual = card.querySelector('.chip-actual strong');
+            if (chipActual) {
+                chipActual.textContent = formatearPorcentaje(resumen.porcentaje);
+            }
+            var banner = card.querySelector('.banner-resumen');
+            if (banner) {
+                pintarBanner(banner, resumen);
+            }
+            var fila = card.querySelector('tr[data-fecha="' + fecha + '"]');
+            if (fila) {
+                fila.querySelectorAll('.asistencia-bar').forEach(function (bar) {
+                    bar.setAttribute('data-activo', 'false');
+                });
+                if (accion !== 'limpiar') {
+                    var selector = accion === 'presente' ? '.bar-presente' : accion === 'ausente' ? '.bar-ausente' : '.bar-cancelada';
+                    var activa = fila.querySelector(selector);
+                    if (activa) {
+                        activa.setAttribute('data-activo', 'true');
+                    }
+                }
+            }
+        }
+
+        document.querySelectorAll('.asistencia-bar').forEach(function (bar) {
+            bar.addEventListener('click', function (event) {
+                event.preventDefault();
+                if (bar.getAttribute('disabled') !== null) {
+                    return;
+                }
+                var form = bar.closest('form');
+                var materiaId = form.querySelector('input[name="materiaId"]').value;
+                var fecha = form.querySelector('input[name="fecha"]').value;
+                var accionInput = form.querySelector('input[name="accion"]');
+                var accion = bar.getAttribute('data-activo') === 'true' ? 'limpiar' : accionInput.value;
+                var url = form.getAttribute('data-marcar-url') || '/asistencia/marcar';
+
+                bar.setAttribute('disabled', 'disabled');
+                var params = new URLSearchParams();
+                params.append('materiaId', materiaId);
+                params.append('fecha', fecha);
+                params.append('accion', accion);
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params.toString()
+                })
+                    .then(function (resp) {
+                        return resp.json();
+                    })
+                    .then(function (data) {
+                        bar.removeAttribute('disabled');
+                        if (data.error) {
+                            mostrarAviso(data.error, true);
+                            return;
+                        }
+                        actualizarMateria(form.closest('.card'), data.resumen, fecha, accion);
+                    })
+                    .catch(function () {
+                        bar.removeAttribute('disabled');
+                        mostrarAviso('No se pudo guardar la asistencia. Intenta de nuevo.', true);
+                    });
+            });
+        });
+    })();
+</script>
 
 </body>
 </html>

@@ -24,7 +24,25 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--uniday-blanco);
+            background-image: url('/img/fondo.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
             color: #1a1a1a;
+        }
+
+        /* Velo blanco translúcido para que el fondo se vea suave y el texto siga legible */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.85);
+            z-index: -1;
+            pointer-events: none;
         }
 
         .bg-uniday-azul {
@@ -89,16 +107,23 @@
             color: var(--uniday-azul);
         }
 
-        /* Tarjeta del semestre activo (Actual) */
+        /* Tarjeta del semestre activo (Actual): más visible con borde morado y fondo pastel */
         .card-activa {
-            border: 2px solid var(--uniday-celeste) !important;
-            box-shadow: 0 10px 30px rgba(25, 37, 132, 0.25);
+            border: 2px solid var(--uniday-morado) !important;
+            background: linear-gradient(135deg, #faf5ff 0%, #eefafd 100%) !important;
+            box-shadow: 0 10px 30px rgba(181, 65, 250, 0.22);
         }
 
         /* Insignia del semestre finalizado */
         .badge-finalizado {
             background-color: #e9ecef;
             color: #6c757d;
+        }
+
+        /* Insignia azul Uniday (notas/promedios >= 4.0) */
+        .badge-uniday-azul {
+            background-color: var(--uniday-azul);
+            color: #fff;
         }
 
         /* Toasts */
@@ -110,6 +135,19 @@
         .toast-error {
             background-color: #dc3545;
             color: #fff;
+        }
+
+        /* Icono de materia en la lista */
+        .materia-icono {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1rem;
+            flex-shrink: 0;
         }
     </style>
 </head>

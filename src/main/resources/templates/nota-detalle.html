@@ -5,6 +5,61 @@
 
 <div th:replace="~{fragments/layout :: body}"></div>
 
+<style>
+    .badge-uniday-morado {
+        background-color: var(--uniday-morado);
+        color: #fff;
+    }
+
+    .alerta-ponderacion {
+        background-color: #f5f1ff;
+        border: 1px solid #e4d8fc;
+        color: var(--uniday-azul);
+        border-radius: .75rem;
+    }
+
+    .padre-item {
+        background-color: #faf7ff !important;
+        border: 1px solid #eee5fd !important;
+        border-left: 4px solid var(--uniday-morado) !important;
+        border-radius: .75rem !important;
+    }
+
+    .hijas-block {
+        border-left: 3px solid var(--uniday-celeste);
+    }
+
+    .padre-item .badge,
+    .hijas-block .badge {
+        font-size: .95rem;
+        padding: .5em .8em;
+        border-radius: 999px;
+    }
+
+    /* Badges de las hijas: un poco más a la izquierda, sin invadir la zona de la nota padre */
+    .hijas-badges {
+        margin-right: 2rem;
+    }
+
+    /* Badges de hijas con menos color (pastel); el rojo de nota insuficiente se mantiene */
+    .badge-hija-ok {
+        background-color: #e6ecff;
+        color: var(--uniday-azul);
+        border: 1px solid #c9d6ff;
+    }
+
+    .badge-hija-pct {
+        background-color: #ecf9fb;
+        color: var(--uniday-azul);
+        border: 1px solid #c9ecf2;
+    }
+
+    /* Tarjetas de los formularios de agregar/editar nota: un poco más oscuras para que se noten */
+    .form-nota-bg {
+        background-color: #ece6f5;
+    }
+</style>
+
 <div class="container">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
         <div>
@@ -13,6 +68,9 @@
                     <i class="bi bi-arrow-left"></i> Volver a notas
                 </a>
                 <div class="d-flex align-items-center mt-2">
+                    <span class="materia-icono me-2" th:style="'background-color:' + ${materia.color} + ';'">
+                        <i th:class="${materia.icono}"></i>
+                    </span>
                     <h1 class="text-uniday-azul fw-bold mb-0" th:text="${materia.nombre}">Materia</h1>
                     <span class="display-6 fw-bold ms-3"
                           th:classappend="${promedio != null ? (promedio >= 4.0 ? 'text-success' : 'text-danger') : 'text-muted'}"
@@ -20,14 +78,22 @@
                 </div>
                 <p class="text-muted mb-0 mt-1">
                     % ponderado: <strong th:text="${#numbers.formatDecimal(sumaPonderaciones, 1, 1)} + '%'">70%</strong>
-                    <span class="text-muted" th:if="${faltaPonderacion}"
-                          th:text="'(falta ' + ${#numbers.formatDecimal(100 - sumaPonderaciones, 1, 1)} + '%)'">(falta 30%)</span>
                 </p>
             </div>
         </div>
-        <button type="button" class="btn btn-uniday" onclick="toggleCalculadora()">
-            <i class="bi bi-calculator"></i> Calculadora
-        </button>
+        <div class="d-flex flex-column gap-2">
+            <button type="button" class="btn btn-uniday" onclick="toggleCalculadora()">
+                <i class="bi bi-calculator me-1"></i> Calculadora
+            </button>
+            <button type="button" th:if="${formModo == 'nueva'}" class="btn btn-uniday-celeste" onclick="toggleAgregarNota()">
+                <i class="bi bi-journal-text me-1"></i> Nota +
+            </button>
+        </div>
+    </div>
+
+    <div th:if="${faltaPonderacion}" class="alerta-ponderacion d-flex align-items-center gap-2 px-3 py-2 mb-4" role="alert">
+        <i class="bi bi-info-circle-fill text-uniday-morado"></i>
+        <span class="small">Te falta <strong th:text="${#numbers.formatDecimal(100 - sumaPonderaciones, 1, 1)} + '%'">30%</strong> de ponderación para completar el 100%.</span>
     </div>
 
     <div class="d-none" id="calculadoraBody">
@@ -56,7 +122,9 @@
     </div>
 
     <div class="card card-uniday p-4">
-        <div th:if="${formModo == 'nueva'}" class="card card-uniday p-3 mb-3 bg-light">
+        <div th:if="${formModo == 'nueva'}" id="agregarNotaBody"
+             th:classappend="${(error != null or padres.isEmpty()) ? '' : 'd-none'}">
+            <div class="card card-uniday p-3 mb-3 form-nota-bg">
             <h3 class="h6 fw-bold mb-2" th:text="${tituloForm}">Agregar nota</h3>
             <form th:action="${formAction}" method="post">
                 <div class="mb-3">
@@ -83,22 +151,22 @@
                     <button type="submit" class="btn btn-uniday">Agregar</button>
                 </div>
             </form>
+            </div>
         </div>
 
         <h2 class="h5 fw-bold mb-3">Notas registradas</h2>
         <p class="text-muted mb-0" th:if="${padres.isEmpty()}">No hay notas registradas para esta materia.</p>
         <ul class="list-group list-group-flush" th:unless="${padres.isEmpty()}">
-            <li class="list-group-item px-0" th:each="p : ${padres}">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="fw-semibold" th:text="${p.nota.nombre}">Certamen 1</div>
-                        <div class="text-muted small"
-                             th:text="'% ponderación: ' + ${#numbers.formatDecimal(p.nota.ponderacion, 1, 1)} + '%'">30%</div>
-                    </div>
+            <li class="list-group-item px-0 py-1" th:each="p : ${padres}">
+                <div class="padre-item p-3">
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                    <div class="fw-bold text-uniday-azul" th:text="${p.nota.nombre}">Certamen 1</div>
                     <div class="d-flex align-items-center gap-2">
                         <span class="badge"
-                              th:classappend="${(p.valorEfectivo != null ? p.valorEfectivo : p.nota.valor) >= 4.0 ? 'bg-success' : 'bg-danger'}"
+                              th:classappend="${(p.valorEfectivo != null ? p.valorEfectivo : p.nota.valor) >= 4.0 ? 'badge-uniday-azul' : 'bg-danger'}"
                               th:text="${#numbers.formatDecimal((p.valorEfectivo != null ? p.valorEfectivo : p.nota.valor), 1, 2)}">5.50</span>
+                        <span class="badge badge-uniday-morado"
+                              th:text="${#numbers.formatDecimal(p.nota.ponderacion, 1, 1)} + '%'">30%</span>
                         <div class="dropdown">
                             <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
                                     title="Opciones" style="color: var(--uniday-azul);">
@@ -125,9 +193,10 @@
                         </div>
                     </div>
                 </div>
+                </div>
 
                 <div th:if="${formModo == 'hija' and formTargetId == p.nota.id}"
-                     class="card card-uniday p-3 mt-2 bg-light">
+                     class="card card-uniday p-3 mt-2 form-nota-bg">
                     <h3 class="h6 fw-bold mb-2" th:text="'Agregar parte a ' + ${padreNombre}">Agregar parte</h3>
                     <form th:action="${formAction}" method="post">
                         <div class="mb-3">
@@ -157,7 +226,7 @@
                 </div>
 
                 <div th:if="${formModo == 'editar' and formTargetId == p.nota.id}"
-                     class="card card-uniday p-3 mt-2 bg-light">
+                     class="card card-uniday p-3 mt-2 form-nota-bg">
                     <h3 class="h6 fw-bold mb-2" th:text="${tituloForm}">Editar nota</h3>
                     <form th:action="${formAction}" method="post">
                         <div class="mb-3">
@@ -188,18 +257,16 @@
                     </form>
                 </div>
 
-                <div th:if="${!p.hijas.isEmpty()}" class="border-start ps-3 ms-2 mt-1">
+                <div th:if="${!p.hijas.isEmpty()}" class="hijas-block ps-3 ms-2 mt-2 d-flex flex-column gap-1">
                     <div th:each="h : ${p.hijas}">
-                        <div class="d-flex justify-content-between align-items-center py-2 border-top border-secondary-subtle">
-                            <div>
-                                <div th:text="${h.nombre}">Parte A</div>
-                                <div class="text-muted small"
-                                     th:text="'% del padre: ' + ${#numbers.formatDecimal(h.ponderacion, 1, 1)} + '%'">50%</div>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <div class="small fw-semibold text-body-secondary" th:text="${h.nombre}">Parte A</div>
+                            <div class="d-flex align-items-center gap-2 hijas-badges">
                                 <span class="badge"
-                                      th:classappend="${h.valor >= 4.0 ? 'bg-success' : 'bg-danger'}"
+                                      th:classappend="${h.valor >= 4.0 ? 'badge-hija-ok' : 'bg-danger'}"
                                       th:text="${#numbers.formatDecimal(h.valor, 1, 2)}">6.50</span>
+                                <span class="badge badge-hija-pct"
+                                      th:text="${#numbers.formatDecimal(h.ponderacion, 1, 1)} + '%'">50%</span>
                                 <div class="dropdown">
                                     <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
                                             title="Opciones" style="color: var(--uniday-azul);">
@@ -224,7 +291,7 @@
                         </div>
 
                         <div th:if="${formModo == 'editar' and formTargetId == h.id}"
-                             class="card card-uniday p-3 mt-2 bg-light">
+                             class="card card-uniday p-3 mt-2 form-nota-bg">
                             <h3 class="h6 fw-bold mb-2" th:text="${tituloForm}">Editar nota</h3>
                             <form th:action="${formAction}" method="post">
                                 <div class="mb-3">
@@ -256,8 +323,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div th:if="${p.hijas.isEmpty()}" class="text-muted small mt-1 ms-1">(sin partes — usa su valor directo)</div>
             </li>
         </ul>
 
@@ -267,6 +332,13 @@
 <script>
     function toggleCalculadora() {
         document.getElementById('calculadoraBody').classList.toggle('d-none');
+    }
+
+    function toggleAgregarNota() {
+        var el = document.getElementById('agregarNotaBody');
+        if (el) {
+            el.classList.toggle('d-none');
+        }
     }
 
     function calcularNota() {

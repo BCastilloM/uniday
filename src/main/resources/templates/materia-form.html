@@ -15,8 +15,10 @@
     </div>
 
     <div class="card card-uniday p-4">
-        <form th:action="${action}" method="post">
+        <form th:action="${action}" method="post" id="materiaForm">
             <input type="hidden" name="semestreId" th:value="${semestre.id}">
+            <input type="hidden" name="color" id="colorInput" th:value="${materia.color != null ? materia.color : '#3B82F6'}">
+            <input type="hidden" name="icono" id="iconoInput" th:value="${materia.icono != null ? materia.icono : 'bi-book'}">
             <div class="mb-3">
                 <label for="nombre" class="form-label">Nombre</label>
                 <input type="text" class="form-control" id="nombre" name="nombre"
@@ -40,6 +42,32 @@
                        th:value="${materia.profesor}" placeholder="Ej: Dra. Andrea Morales">
             </div>
             <div class="mb-3">
+                <label class="form-label">Color</label>
+                <div class="d-flex gap-2 flex-wrap" id="colorPicker">
+                    <button type="button" class="color-btn" data-color="#3B82F6" style="background-color:#3B82F6;" title="Azul"></button>
+                    <button type="button" class="color-btn" data-color="#22C55E" style="background-color:#22C55E;" title="Verde"></button>
+                    <button type="button" class="color-btn" data-color="#F97316" style="background-color:#F97316;" title="Naranja"></button>
+                    <button type="button" class="color-btn" data-color="#EF4444" style="background-color:#EF4444;" title="Rojo"></button>
+                    <button type="button" class="color-btn" data-color="#A855F7" style="background-color:#A855F7;" title="Morado"></button>
+                    <button type="button" class="color-btn" data-color="#06B6D4" style="background-color:#06B6D4;" title="Celeste"></button>
+                    <button type="button" class="color-btn" data-color="#EC4899" style="background-color:#EC4899;" title="Rosa"></button>
+                    <button type="button" class="color-btn" data-color="#F59E0B" style="background-color:#F59E0B;" title="Ámbar"></button>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Ícono</label>
+                <div class="d-flex gap-2 flex-wrap" id="iconoPicker">
+                    <button type="button" class="icono-btn" data-icon="bi-book" title="Libro"><i class="bi bi-book"></i></button>
+                    <button type="button" class="icono-btn" data-icon="bi-calculator" title="Calculadora"><i class="bi bi-calculator"></i></button>
+                    <button type="button" class="icono-btn" data-icon="bi-globe" title="Globo"><i class="bi bi-globe"></i></button>
+                    <button type="button" class="icono-btn" data-icon="bi-palette" title="Paleta"><i class="bi bi-palette"></i></button>
+                    <button type="button" class="icono-btn" data-icon="bi-lightbulb" title="Idea"><i class="bi bi-lightbulb"></i></button>
+                    <button type="button" class="icono-btn" data-icon="bi-cpu" title="Tecnología"><i class="bi bi-cpu"></i></button>
+                    <button type="button" class="icono-btn" data-icon="bi-music-note" title="Música"><i class="bi bi-music-note"></i></button>
+                    <button type="button" class="icono-btn" data-icon="bi-heart" title="Salud"><i class="bi bi-heart"></i></button>
+                </div>
+            </div>
+            <div class="mb-3">
                 <label for="descripcion" class="form-label">Descripción</label>
                 <textarea class="form-control" id="descripcion" name="descripcion" rows="3"
                           th:text="${materia.descripcion}" placeholder="Resumen de contenidos o temas principales..."></textarea>
@@ -48,18 +76,7 @@
                 <label for="asistenciaExigida" class="form-label">Asistencia exigida (%)</label>
                 <input type="number" class="form-control" id="asistenciaExigida" name="asistenciaExigida"
                        th:value="${materia.asistenciaExigida}" min="0" max="100">
-            </div>
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="fechaInicioClases" class="form-label">Primera clase</label>
-                    <input type="date" class="form-control" id="fechaInicioClases" name="fechaInicioClases"
-                           th:value="${materia.fechaInicioClases}">
-                </div>
-                <div class="col-md-6 mt-3 mt-md-0">
-                    <label for="fechaFinClases" class="form-label">Última clase</label>
-                    <input type="date" class="form-control" id="fechaFinClases" name="fechaFinClases"
-                           th:value="${materia.fechaFinClases}">
-                </div>
+                <div class="form-text">Las clases se calculan automáticamente entre la fecha de inicio y fin del semestre, según los días de tu horario.</div>
             </div>
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-uniday">Guardar</button>
@@ -68,6 +85,73 @@
         </form>
     </div>
 </div>
+
+<style>
+    .color-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 3px solid transparent;
+        cursor: pointer;
+        transition: transform 0.15s, border-color 0.15s;
+    }
+    .color-btn:hover { transform: scale(1.15); }
+    .color-btn.active { border-color: #1a1a1a; transform: scale(1.15); }
+
+    .icono-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        border: 2px solid #dee2e6;
+        background: #f8f9fa;
+        color: #495057;
+        font-size: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.15s, border-color 0.15s, background-color 0.15s, color 0.15s;
+    }
+    .icono-btn:hover { border-color: #adb5bd; transform: scale(1.1); }
+    .icono-btn.active { border-color: var(--uniday-morado); background-color: var(--uniday-morado); color: #fff; transform: scale(1.1); }
+</style>
+
+<script>
+    (function() {
+        var colorInput = document.getElementById('colorInput');
+        var iconoInput = document.getElementById('iconoInput');
+
+        // --- Color picker ---
+        var colorBtns = document.querySelectorAll('#colorPicker .color-btn');
+        function selectColor(hex) {
+            colorInput.value = hex;
+            colorBtns.forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-color') === hex);
+            });
+        }
+        colorBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                selectColor(btn.getAttribute('data-color'));
+            });
+        });
+        selectColor(colorInput.value);
+
+        // --- Icono picker ---
+        var iconoBtns = document.querySelectorAll('#iconoPicker .icono-btn');
+        function selectIcono(cls) {
+            iconoInput.value = cls;
+            iconoBtns.forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-icon') === cls);
+            });
+        }
+        iconoBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                selectIcono(btn.getAttribute('data-icon'));
+            });
+        });
+        selectIcono(iconoInput.value);
+    })();
+</script>
 
 </body>
 </html>

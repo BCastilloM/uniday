@@ -88,8 +88,14 @@ public class HorarioController {
         List<Materia> materias = materiaRepository.findBySemestreId(semestre.getId());
         List<Horario> horarios;
         Map<Long, String> materiaNombres = new HashMap<>();
+        Map<Long, String> materiaColores = new HashMap<>();
+        Map<Long, String> materiaIconos = new HashMap<>();
+        Map<Long, String> materiaProfesores = new HashMap<>();
         for (Materia materia : materias) {
             materiaNombres.put(materia.getId(), materia.getNombre());
+            materiaColores.put(materia.getId(), materia.getColor());
+            materiaIconos.put(materia.getId(), materia.getIcono());
+            materiaProfesores.put(materia.getId(), materia.getProfesor());
         }
 
         if (materias.isEmpty()) {
@@ -145,6 +151,9 @@ public class HorarioController {
         model.addAttribute("semestre", semestre);
         model.addAttribute("bloquesPorDia", bloquesPorDia);
         model.addAttribute("materiaNombres", materiaNombres);
+        model.addAttribute("materiaColores", materiaColores);
+        model.addAttribute("materiaIconos", materiaIconos);
+        model.addAttribute("materiaProfesores", materiaProfesores);
         model.addAttribute("horas", horas);
         model.addAttribute("totalPx", totalPx);
         model.addAttribute("rowAltura", rowH);

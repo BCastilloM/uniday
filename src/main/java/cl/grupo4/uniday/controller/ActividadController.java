@@ -130,11 +130,15 @@ public class ActividadController {
                 String.format("%02d/%02d", fecha.getDayOfMonth(), fecha.getMonthValue());
     }
 
-    private Map<String, Object> mapaActividad(Actividad e, Map<Long, String> materiaNombres, LocalDate hoy) {
+    private Map<String, Object> mapaActividad(Actividad e, Map<Long, String> materiaNombres,
+                                              Map<Long, String> materiaColores,
+                                              Map<Long, String> materiaIconos, LocalDate hoy) {
         Map<String, Object> actividad = new HashMap<>();
         actividad.put("id", e.getId());
         actividad.put("titulo", e.getTitulo());
         actividad.put("materiaNombre", materiaNombres.getOrDefault(e.getMateriaId(), ""));
+        actividad.put("materiaColor", materiaColores.getOrDefault(e.getMateriaId(), "#192584"));
+        actividad.put("materiaIcono", materiaIconos.getOrDefault(e.getMateriaId(), "bi-book"));
         actividad.put("tipoCapitalizado", TIPOS.getOrDefault(e.getTipo(), e.getTipo()));
         actividad.put("fechaRelativa", fechaRelativa(e.getFecha(), hoy));
         actividad.put("estado", e.getEstado());
@@ -162,10 +166,20 @@ public class ActividadController {
         int mesVista = mes != null && mes >= 1 && mes <= 12 ? mes : hoy.getMonthValue();
         YearMonth yearMonth = YearMonth.of(anioVista, mesVista);
 
+        // Entrada directa (sin parámetros): preseleccionar hoy para mostrar sus actividades al tiro
+        LocalDate diaVista = dia;
+        if (anio == null && mes == null && dia == null) {
+            diaVista = hoy;
+        }
+
         List<Materia> materias = materiaRepository.findBySemestreId(semestre.getId());
         Map<Long, String> materiaNombres = new HashMap<>();
+        Map<Long, String> materiaColores = new HashMap<>();
+        Map<Long, String> materiaIconos = new HashMap<>();
         for (Materia materia : materias) {
             materiaNombres.put(materia.getId(), materia.getNombre());
+            materiaColores.put(materia.getId(), materia.getColor());
+            materiaIconos.put(materia.getId(), materia.getIcono());
         }
 
         // Conteo de actividades por día para los puntos de la grilla (todas las del mes, sin filtro)
@@ -187,16 +201,35 @@ public class ActividadController {
         for (int d = 1; d <= yearMonth.lengthOfMonth(); d++) {
             LocalDate fecha = yearMonth.atDay(d);
             int cantidad = cantidadPorDia.getOrDefault(fecha, 0);
-            boolean selected = fecha.equals(dia);
+            boolean selected = fecha.equals(diaVista);
+
+            // Chips por materia para la grilla: una cápsula por asignatura (color + ícono) con su conteo
+            Map<Long, Integer> actividadesPorMateria = new LinkedHashMap<>();
+            for (Actividad e : actividadesMes) {
+                if (e.getFecha().equals(fecha)) {
+                    actividadesPorMateria.merge(e.getMateriaId(), 1, Integer::sum);
+                }
+            }
+            List<Map<String, Object>> chips = new ArrayList<>();
+            for (Map.Entry<Long, Integer> entry : actividadesPorMateria.entrySet()) {
+                Map<String, Object> chip = new HashMap<>();
+                chip.put("color", materiaColores.getOrDefault(entry.getKey(), "#192584"));
+                chip.put("icono", materiaIconos.getOrDefault(entry.getKey(), "bi-book"));
+                chip.put("nombre", materiaNombres.getOrDefault(entry.getKey(), ""));
+                chip.put("cantidad", entry.getValue());
+                chips.add(chip);
+            }
+
             Map<String, Object> celda = new HashMap<>();
             celda.put("numero", d);
             celda.put("cantidad", cantidad);
-            celda.put("dots", Math.min(cantidad, 3));
-            celda.put("masDeTres", cantidad > 3);
+            celda.put("chips", chips);
+            celda.put("masChips", chips.size() > 3);
+            celda.put("chipRestantes", chips.size() - 3);
             celda.put("esHoy", fecha.equals(hoy));
             celda.put("selected", selected);
-            // Volver a hacer clic en el día ya seleccionado limpia el día
-            celda.put("href", cantidad > 0 ? urlCalendario(anioVista, mesVista, selected ? null : fecha) : null);
+            // Todos los días son seleccionables (con o sin actividades); volver a hacer clic limpia el día
+            celda.put("href", urlCalendario(anioVista, mesVista, selected ? null : fecha));
             dias.add(celda);
         }
         while (dias.size() % 7 != 0) {
@@ -207,10 +240,10 @@ public class ActividadController {
         for (String tipo : TIPOS.keySet()) {
             actividadesPorTipo.put(TIPOS_PLURAL.get(tipo), new ArrayList<>());
         }
-        if (dia != null) {
+        if (diaVista != null) {
             List<Actividad> delDia = new ArrayList<>();
             for (Actividad e : actividadesMes) {
-                if (e.getFecha().equals(dia)) {
+                if (e.getFecha().equals(diaVista)) {
                     delDia.add(e);
                 }
             }
@@ -219,18 +252,18 @@ public class ActividadController {
                 List<Map<String, Object>> grupo = actividadesPorTipo.get(TIPOS_PLURAL.get(tipo));
                 for (Actividad e : delDia) {
                     if (tipo.equals(e.getTipo()) && !"completada".equals(e.getEstado())) {
-                        grupo.add(mapaActividad(e, materiaNombres, hoy));
+                        grupo.add(mapaActividad(e, materiaNombres, materiaColores, materiaIconos, hoy));
                     }
                 }
                 for (Actividad e : delDia) {
                     if (tipo.equals(e.getTipo()) && "completada".equals(e.getEstado())) {
-                        grupo.add(mapaActividad(e, materiaNombres, hoy));
+                        grupo.add(mapaActividad(e, materiaNombres, materiaColores, materiaIconos, hoy));
                     }
                 }
             }
         }
 
-        boolean mostrarLista = dia != null;
+        boolean mostrarLista = diaVista != null;
         boolean hayActividades = actividadesPorTipo.values().stream().anyMatch(lista -> !lista.isEmpty());
 
         YearMonth anterior = yearMonth.minusMonths(1);
@@ -239,7 +272,7 @@ public class ActividadController {
         model.addAttribute("semestre", semestre);
         model.addAttribute("dias", dias);
         model.addAttribute("mostrarLista", mostrarLista);
-        model.addAttribute("diaSeleccionado", dia);
+        model.addAttribute("diaSeleccionado", diaVista);
         model.addAttribute("hayActividades", hayActividades);
         model.addAttribute("actividadesPorTipo", actividadesPorTipo);
         model.addAttribute("mesNombre", MESES.get(mesVista) + " " + anioVista);
@@ -247,7 +280,7 @@ public class ActividadController {
         model.addAttribute("mes", mesVista);
         model.addAttribute("hrefAnterior", urlCalendario(anterior.getYear(), anterior.getMonthValue(), null));
         model.addAttribute("hrefSiguiente", urlCalendario(siguiente.getYear(), siguiente.getMonthValue(), null));
-        model.addAttribute("hrefNuevo", dia != null && !dia.isBefore(hoy) ? "/calendario/nuevo?dia=" + dia : "/calendario/nuevo");
+        model.addAttribute("hrefNuevo", diaVista != null && !diaVista.isBefore(hoy) ? "/calendario/nuevo?dia=" + diaVista : "/calendario/nuevo");
         return "calendario";
     }
 

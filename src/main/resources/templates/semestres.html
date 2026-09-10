@@ -24,9 +24,13 @@
             <div th:classappend="${semestre.activo} ? 'card-activa' : ''" class="card card-uniday h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="materia-icono"
+                                  style="background: linear-gradient(135deg, var(--uniday-morado), var(--uniday-celeste));">
+                                <i class="bi bi-mortarboard-fill"></i>
+                            </span>
                             <h5 class="card-title fw-bold mb-0" th:text="${semestre.nombre}">Semestre</h5>
-                            <span class="badge mt-1" th:classappend="${semestre.activo} ? 'badge-activo' : 'badge-finalizado'"
+                            <span class="badge" th:classappend="${semestre.activo} ? 'badge-activo' : 'badge-finalizado'"
                                   th:text="${semestre.activo} ? 'Actual' : 'Finalizado'">Estado</span>
                         </div>
                         <div class="dropdown">

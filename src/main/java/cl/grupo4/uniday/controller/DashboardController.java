@@ -82,6 +82,8 @@ public class DashboardController {
             datos.put("id", materia.getId());
             datos.put("nombre", materia.getNombre());
             datos.put("codigo", materia.getCodigo());
+            datos.put("color", materia.getColor());
+            datos.put("icono", materia.getIcono());
             datos.put("promedio", promedio);
             datos.put("cantidadNotas", notas.size());
             materiasConPromedio.add(datos);
@@ -92,8 +94,10 @@ public class DashboardController {
         }
 
         Map<Long, String> materiaNombres = new HashMap<>();
+        Map<Long, String> materiaColores = new HashMap<>();
         for (Materia materia : materias) {
             materiaNombres.put(materia.getId(), materia.getNombre());
+            materiaColores.put(materia.getId(), materia.getColor());
         }
 
         List<Map<String, Object>> proximasActividades = new ArrayList<>();
@@ -110,6 +114,7 @@ public class DashboardController {
                         datos.put("tipo", actividad.getTipo());
                         datos.put("fecha", actividad.getFecha());
                         datos.put("materiaNombre", materiaNombres.get(actividad.getMateriaId()));
+                        datos.put("materiaColor", materiaColores.get(actividad.getMateriaId()));
                         proximasActividades.add(datos);
                     });
         }

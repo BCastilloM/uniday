@@ -191,6 +191,8 @@ public class NotaController {
             datos.put("sumaPonderaciones", sumaPonderaciones);
             datos.put("faltaPonderacion", sumaPonderaciones < 100);
             datos.put("porcentajePonderado", sumaPonderaciones);
+            datos.put("color", materia.getColor());
+            datos.put("icono", materia.getIcono());
             materiasConPromedio.add(datos);
         }
 

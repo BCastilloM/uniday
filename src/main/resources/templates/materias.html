@@ -9,8 +9,8 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <div class="d-flex align-items-center">
-                <h1 class="text-uniday-azul fw-bold mb-0" th:text="${semestre.nombre}">Semestre</h1>
-                <span class="badge badge-activo ms-2">Activo</span>
+                <h1 class="text-uniday-azul fw-bold mb-0">Materias</h1>
+                <span class="badge badge-activo ms-2" th:text="${semestre.nombre}">Semestre</span>
             </div>
             <p class="text-muted mb-0" th:if="${semestre.fechaInicio != null}">
                 Desde <span th:text="${semestre.fechaInicio}"></span>
@@ -30,6 +30,9 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div class="d-flex align-items-center flex-wrap gap-2">
+                            <span class="materia-icono" th:style="'background-color:' + ${materia.color} + ';'">
+                                <i th:class="${materia.icono}"></i>
+                            </span>
                             <h5 class="card-title fw-bold mb-0" th:text="${materia.nombre}">Materia</h5>
                             <span class="badge bg-light text-dark border" th:if="${materia.codigo != null and !materia.codigo.isBlank()}"
                                   th:text="${materia.codigo}">COD-101</span>

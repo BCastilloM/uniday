@@ -6,10 +6,17 @@
 <div th:replace="~{fragments/layout :: body}"></div>
 
 <style>
+    .cal-card {
+        background: linear-gradient(135deg, #efe3fb 0%, #dff1f8 100%);
+        border: 1px solid #e6dcf2;
+        border-radius: 1rem;
+        box-shadow: 0 10px 30px rgba(25, 37, 132, .12);
+    }
+
     .cal-grilla {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        gap: 6px;
+        gap: 8px;
     }
 
     .cal-cabecera {
@@ -22,8 +29,8 @@
     }
 
     .cal-dia {
-        min-height: 62px;
-        border: 1px solid #eaedf5;
+        min-height: 64px;
+        border: 1px solid #c3cde8;
         border-radius: 10px;
         padding: 5px 8px;
         display: flex;
@@ -46,17 +53,19 @@
     .cal-dia-hoy {
         outline: 2px solid var(--uniday-celeste);
         outline-offset: -1px;
+        background: color-mix(in srgb, var(--uniday-celeste) 12%, white);
     }
 
     .cal-dia-sel {
-        background: #f5f1ff;
+        background: color-mix(in srgb, var(--uniday-morado) 12%, white);
         border-color: var(--uniday-morado);
+        box-shadow: 0 2px 10px rgba(181, 65, 250, .18);
     }
 
     .cal-num {
-        font-size: 12px;
-        font-weight: 600;
-        color: #9aa1b1;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: rgba(25, 37, 132, .78);
         line-height: 1;
     }
 
@@ -67,23 +76,66 @@
 
     .cal-dots {
         display: flex;
-        gap: 3px;
+        gap: 6px;
         align-items: center;
         margin-top: auto;
+        flex-wrap: wrap;
     }
 
-    .cal-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--uniday-azul);
+    .cal-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 30px;
+        padding: 0 10px;
+        border-radius: 999px;
+        color: #fff;
+        line-height: 1;
+        background: var(--cc, var(--uniday-azul));
+        box-shadow: 0 2px 6px rgba(25, 37, 132, .18);
+    }
+
+    .cal-chip i {
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    .cal-chip-n {
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1;
     }
 
     .cal-dot-mas {
-        font-size: 10px;
-        font-weight: 600;
-        color: #9aa1b1;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--uniday-azul);
         line-height: 1;
+    }
+
+    .materia-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        color: #fff;
+        background: var(--mc, var(--uniday-azul));
+        margin-right: 10px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(25, 37, 132, .18);
+    }
+
+    .materia-chip i {
+        font-size: 22px;
+        line-height: 1;
+    }
+
+    .badge-tipo {
+        font-size: .85rem;
+        font-weight: 600;
+        padding: .55em .95em;
     }
 </style>
 
@@ -99,7 +151,7 @@
         <a th:href="${hrefNuevo}" class="btn btn-uniday">+ Nueva actividad</a>
     </div>
 
-    <div class="card card-uniday p-3 mb-3">
+    <div class="card cal-card p-3 mb-3">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <a th:href="${hrefAnterior}" class="btn btn-outline-secondary btn-sm" title="Mes anterior">
                 <i class="bi bi-chevron-left"></i>
@@ -125,8 +177,13 @@
                    th:classappend="${(d.esHoy ? 'cal-dia-hoy' : '') + (d.selected ? ' cal-dia-sel' : '')}">
                     <span class="cal-num" th:classappend="${d.esHoy ? 'cal-num-hoy' : ''}" th:text="${d.numero}">1</span>
                     <div class="cal-dots" th:if="${d.cantidad > 0}">
-                        <span class="cal-dot" th:each="i : ${#numbers.sequence(1, d.dots)}"></span>
-                        <span class="cal-dot-mas" th:if="${d.masDeTres}" th:text="'+' + (${d.cantidad} - 3)">+2</span>
+                        <span class="cal-chip" th:each="c, st : ${d.chips}" th:if="${st.index < 3}"
+                              th:style="'--cc:' + ${c.color} + ';'"
+                              th:title="${c.nombre + (c.cantidad > 1 ? ' (' + c.cantidad + ' actividades)' : '')}">
+                            <i th:class="${c.icono}"></i>
+                            <span class="cal-chip-n" th:if="${c.cantidad > 1}" th:text="${c.cantidad}">2</span>
+                        </span>
+                        <span class="cal-dot-mas" th:if="${d.masChips}" th:text="'+' + ${d.chipRestantes}">+1</span>
                     </div>
                 </a>
             </th:block>
@@ -143,7 +200,7 @@
                             <input type="hidden" name="anio" th:value="${anio}">
                             <input type="hidden" name="mes" th:value="${mes}">
                             <input type="hidden" name="dia" th:value="${diaSeleccionado}">
-                            <select name="estado" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                            <select name="estado" class="form-select form-select-sm estado-select" style="width:auto;">
                                 <option value="pendiente" th:selected="${a.estado == 'pendiente'}">Pendiente</option>
                                 <option value="progreso" th:selected="${a.estado == 'progreso'}">En progreso</option>
                                 <option value="completada" th:selected="${a.estado == 'completada'}">Completada</option>
@@ -152,11 +209,17 @@
                         <div class="flex-grow-1">
                             <div class="fw-bold" th:classappend="${a.estado == 'completada' ? 'text-decoration-line-through text-body-tertiary' : ''}"
                                  th:text="${a.titulo}">Título</div>
-                            <small class="text-muted" th:text="${a.materiaNombre}">Materia</small>
+                            <small class="text-muted">
+                                <span class="materia-chip" th:style="'--mc:' + ${a.materiaColor} + ';'">
+                                    <i th:class="${a.materiaIcono}"></i>
+                                </span>
+                                <span th:text="${a.materiaNombre}">Materia</span>
+                            </small>
                         </div>
-                        <span class="badge rounded-pill bg-light text-dark border d-none d-md-inline"
+                        <span class="badge badge-tipo rounded-pill bg-light text-dark border d-none d-md-inline"
                               th:text="${a.tipoCapitalizado}">Tarea</span>
                         <span class="small fw-semibold" th:text="${a.fechaRelativa}"
+                              th:attr="data-vencida=${a.vencida}, data-es-hoy=${a.esHoy}"
                               th:classappend="${(a.vencida or (a.esHoy and a.estado != 'completada')) ? 'text-danger' : 'text-muted'}">Hoy</span>
                         <div class="dropdown">
                             <button class="btn btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false"
@@ -194,6 +257,83 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        function siguienteH3(card) {
+            var el = card.nextElementSibling;
+            while (el) {
+                if (el.tagName === 'H3') return el;
+                el = el.nextElementSibling;
+            }
+            return null;
+        }
+
+        function h3DelGrupo(card) {
+            var el = card.previousElementSibling;
+            while (el) {
+                if (el.tagName === 'H3') return el;
+                el = el.previousElementSibling;
+            }
+            return null;
+        }
+
+        // Mueve la tarjeta dentro de su grupo igual que el orden del servidor:
+        // primero las no completadas y al final las completadas.
+        function reordenar(card, estado, siguiente) {
+            var h3 = h3DelGrupo(card);
+            if (!h3) return;
+            if (estado === 'completada') {
+                card.parentNode.insertBefore(card, siguiente);
+                return;
+            }
+            // No completada: va antes de la primera completada del grupo (o al final si no hay)
+            var primera = h3.nextElementSibling;
+            while (primera && primera.tagName !== 'H3' &&
+                   !primera.classList.contains('text-decoration-line-through')) {
+                primera = primera.nextElementSibling;
+            }
+            if (primera && primera.tagName !== 'H3' && primera !== card) {
+                card.parentNode.insertBefore(card, primera);
+            } else if (!primera || primera.tagName === 'H3') {
+                card.parentNode.insertBefore(card, siguiente);
+            }
+        }
+
+        document.querySelectorAll('.estado-select').forEach(function (select) {
+            select.addEventListener('change', function () {
+                var form = select.closest('form');
+                if (!form) return;
+                var card = form.closest('.card');
+                var cuerpo = card.querySelector('.card-body');
+                var datos = new URLSearchParams(new FormData(form));
+                select.disabled = true;
+                fetch(form.getAttribute('action'), { method: 'POST', body: datos })
+                    .then(function (res) {
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        var estado = select.value;
+                        var titulo = cuerpo.querySelector('.fw-bold');
+                        var fecha = cuerpo.querySelector('.small.fw-semibold');
+                        titulo.classList.toggle('text-decoration-line-through', estado === 'completada');
+                        titulo.classList.toggle('text-body-tertiary', estado === 'completada');
+                        if (fecha) {
+                            var vencida = fecha.getAttribute('data-vencida') === 'true';
+                            var esHoy = fecha.getAttribute('data-es-hoy') === 'true';
+                            var peligrosa = vencida || (esHoy && estado !== 'completada');
+                            fecha.classList.toggle('text-danger', peligrosa);
+                            fecha.classList.toggle('text-muted', !peligrosa);
+                        }
+                        reordenar(card, estado, siguienteH3(card));
+                        select.disabled = false;
+                    })
+                    .catch(function () {
+                        select.disabled = false;
+                        form.submit();
+                    });
+            });
+        });
+    })();
+</script>
 
 </body>
 </html>

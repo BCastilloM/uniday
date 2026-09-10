@@ -27,10 +27,18 @@
         flex: 0 0 52px;
     }
 
+    /* Tarjeta grande del horario con los colores de la paleta, suaves */
+    .card-horario {
+        background: linear-gradient(135deg, #efe3fb 0%, #dff1f8 100%);
+        border: 1px solid #e6dcf2;
+        border-radius: 1rem;
+        box-shadow: 0 10px 30px rgba(25, 37, 132, .12);
+    }
+
     .col-dia {
         flex: 1 1 0;
         min-width: 100px;
-        border-left: 1px solid #eceff5;
+        border-left: 1px solid rgba(25, 37, 132, .12);
     }
 
     .cabecera-horas {
@@ -39,14 +47,19 @@
     }
 
     .cabecera-dia {
-        height: 44px;
-        flex: 0 0 44px;
+        height: 36px;
+        flex: 0 0 36px;
+        margin: 4px 6px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 700;
+        font-weight: 800;
         font-size: 12.5px;
+        letter-spacing: .04em;
         color: var(--uniday-azul);
+        background: linear-gradient(135deg, rgba(181, 65, 250, .16) 0%, rgba(79, 210, 233, .22) 100%);
+        border: 1px solid rgba(25, 37, 132, .08);
+        border-radius: 999px;
     }
 
     .cuerpo-horas,
@@ -55,7 +68,7 @@
     }
 
     .cuerpo-dia {
-        background: #f7f8fc;
+        background: rgba(255, 255, 255, .55);
         border-radius: 12px;
     }
 
@@ -64,7 +77,7 @@
         left: 0;
         right: 0;
         height: 72px;
-        border-top: 1px solid #eceff5;
+        border-top: 1px solid rgba(25, 37, 132, .10);
     }
 
     .hora-label {
@@ -77,18 +90,20 @@
         align-items: flex-start;
         padding-top: 3px;
         padding-right: 8px;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 600;
-        color: #9aa1b1;
-        border-top: 1px solid #eceff5;
+        color: rgba(25, 37, 132, .62);
+        border-top: 1px solid rgba(25, 37, 132, .10);
     }
 
     .bloque {
         position: absolute;
         border-radius: 10px;
-        background: var(--uniday-azul);
-        color: #fff;
-        box-shadow: 0 3px 8px rgba(25, 37, 132, .15);
+        background: color-mix(in srgb, var(--bc, var(--uniday-azul)) 10%, white);
+        color: var(--uniday-azul);
+        box-shadow: 0 3px 8px rgba(25, 37, 132, .12);
+        border: 1px solid color-mix(in srgb, var(--bc, var(--uniday-azul)) 24%, white);
+        border-left: 4px solid var(--bc, var(--uniday-azul));
         padding: 8px 12px;
         display: flex;
         flex-direction: column;
@@ -96,19 +111,50 @@
     }
 
     .bloque-materia {
-        font-size: 12.5px;
+        font-size: 13.5px;
         font-weight: 700;
-        line-height: 1.2;
+        line-height: 1.25;
         padding-right: 18px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .bloque-ico {
+        font-size: 15px;
+        color: #fff;
+        background: var(--bc, var(--uniday-azul));
+        border-radius: 7px;
+        width: 26px;
+        height: 26px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
     }
 
     .bloque-hora {
-        font-size: 11px;
-        opacity: .85;
-        margin-top: 3px;
+        font-size: 13px;
+        color: var(--uniday-azul);
+        margin-top: 5px;
         display: flex;
-        gap: 6px;
+        gap: 4px;
         flex-wrap: wrap;
+    }
+
+    .bloque-sala {
+        font-size: 12.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        color: var(--uniday-morado);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .bloque-sala i {
+        font-size: 13.5px;
     }
 
     .bloque .dropdown {
@@ -118,8 +164,8 @@
     }
 
     .bloque .btn-puntos {
-        color: #fff;
-        font-size: 15px;
+        color: var(--uniday-azul);
+        font-size: 16px;
         line-height: 1;
         padding: 4px 6px;
     }
@@ -129,15 +175,15 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <div class="d-flex align-items-center">
-                <h1 class="text-uniday-azul fw-bold mb-0" th:text="${semestre.nombre}">Semestre</h1>
-                <span class="badge badge-activo ms-2">Activo</span>
+                <h1 class="text-uniday-azul fw-bold mb-0">Horario</h1>
+                <span class="badge badge-activo ms-2" th:text="${semestre.nombre}">Semestre</span>
             </div>
             <p class="text-muted mb-0">Horario semanal del semestre</p>
         </div>
         <a th:href="@{/horarios/nuevo}" class="btn btn-uniday">+ Nuevo horario</a>
     </div>
 
-    <div class="card card-uniday p-3" th:if="${!horas.isEmpty()}">
+    <div class="card card-horario p-3" th:if="${!horas.isEmpty()}">
         <div class="horario-scroll">
             <div class="grilla-horario">
 
@@ -160,12 +206,20 @@
 
                         <div class="bloque"
                              th:each="b : ${e.value}"
-                             th:style="'top:' + ${topPx[b.id]} + 'px; height:' + ${heightPx[b.id]} + 'px; left: calc(' + ${leftPct[b.id]} + '% + 4px); width: calc(' + ${widthPct[b.id]} + '% - 8px)'">
-                            <span class="bloque-materia" th:text="${materiaNombres[b.materiaId]}">Programación</span>
+                             th:style="'--bc:' + ${materiaColores[b.materiaId] != null ? materiaColores[b.materiaId] : 'var(--uniday-azul)'} + '; top:' + ${topPx[b.id]} + 'px; height:' + ${heightPx[b.id]} + 'px; left: calc(' + ${leftPct[b.id]} + '% + 4px); width: calc(' + ${widthPct[b.id]} + '% - 8px)'">
+                            <span class="bloque-materia">
+                                <i class="bi bloque-ico"
+                                   th:classappend="${materiaIconos[b.materiaId] != null ? materiaIconos[b.materiaId] : 'bi-book'}"></i>
+                                <span th:text="${materiaNombres[b.materiaId]}">Programación</span>
+                            </span>
                             <span class="bloque-hora">
                                 <span th:text="${b.horaInicio} + ' - ' + ${b.horaFin}">08:30 - 10:00</span>
-                                <span class="text-white-50" th:if="${b.sala != null and !b.sala.isBlank()}"
-                                      th:text="${b.sala}">Sala 12</span>
+                                <span class="bloque-sala" th:if="${b.sala != null and !b.sala.isBlank()}">
+                                    <i class="bi bi-door-open"></i>
+                                    <span th:text="${b.sala}">Sala 12</span>
+                                </span>
+                                <span th:if="${materiaProfesores[b.materiaId] != null and !materiaProfesores[b.materiaId].isBlank()}"
+                                      th:text="${' · ' + materiaProfesores[b.materiaId]}">Prof. Nombre</span>
                             </span>
                             <div class="dropdown">
                                 <button class="btn btn-puntos border-0 bg-transparent" type="button"

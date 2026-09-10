@@ -16,10 +16,14 @@
     <div class="card card-uniday p-4">
         <form th:action="${action}" method="post">
             <div class="mb-3">
-                <label for="materiaId" class="form-label">Materia</label>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span id="materiaPreview" class="materia-icono" style="background-color:#3B82F6;"><i class="bi bi-book"></i></span>
+                    <label for="materiaId" class="form-label mb-0">Materia</label>
+                </div>
                 <select class="form-select" id="materiaId" name="materiaId" required>
                     <option value="" disabled>Selecciona una materia</option>
                     <option th:each="materia : ${materias}" th:value="${materia.id}" th:text="${materia.nombre}"
+                            th:attr="data-color=${materia.color}, data-icon=${materia.icono}"
                             th:selected="${horario.materiaId == materia.id}">Materia</option>
                 </select>
             </div>
@@ -55,6 +59,22 @@
         </form>
     </div>
 </div>
+
+<script>
+    (function() {
+        var select = document.getElementById('materiaId');
+        var preview = document.getElementById('materiaPreview');
+        function updatePreview() {
+            var opt = select.options[select.selectedIndex];
+            if (opt && opt.value) {
+                preview.style.backgroundColor = opt.getAttribute('data-color') || '#3B82F6';
+                preview.querySelector('i').className = opt.getAttribute('data-icon') || 'bi bi-book';
+            }
+        }
+        select.addEventListener('change', updatePreview);
+        updatePreview();
+    })();
+</script>
 
 </body>
 </html>

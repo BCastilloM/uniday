@@ -20,6 +20,9 @@ public class Asistencia {
     @Column(nullable = false)
     private boolean presente;
 
+    @Column(name = "no_hubo")
+    private Boolean noHubo;
+
     public Asistencia() {
     }
 
@@ -49,5 +52,13 @@ public class Asistencia {
 
     public void setPresente(boolean presente) {
         this.presente = presente;
+    }
+
+    public Boolean getNoHubo() {
+        return noHubo;
+    }
+
+    public void setNoHubo(Boolean noHubo) {
+        this.noHubo = noHubo;
     }
 }
