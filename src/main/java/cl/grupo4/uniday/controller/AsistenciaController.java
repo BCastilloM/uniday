@@ -228,7 +228,7 @@ public class AsistenciaController {
                 }).count();
         long pendientes = totalClases - asistidas - ausentes;
         long pasadas = planificadas.stream().filter(fecha -> !fecha.isAfter(hoy)).count();
-        double porcentaje = pasadas == 0 ? 0.0 : asistidas * 100.0 / pasadas;
+        double porcentaje = totalClases == 0 ? 0.0 : asistidas * 100.0 / totalClases;
 
         long faltasMaximas = Math.max(0,
                 (long) Math.floor(planificadasBrutas * (100.0 - materia.getAsistenciaExigida()) / 100.0) - descontadas);
